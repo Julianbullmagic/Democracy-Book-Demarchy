@@ -9,8 +9,11 @@ const ruleSchema = mongoose.Schema({
     type: String,
     required: true
   },
+  explanation:String,
+  group:{type:mongoose.Schema.Types.ObjectId,ref:"HigherLevelGroup"},
   approval: [{type:mongoose.Schema.Types.ObjectId,ref:"User"}],
   coordinates:[Number],
+  timecreated:Number,
   level:Number,
   grouptype:String
 })

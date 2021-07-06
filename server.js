@@ -77,6 +77,8 @@ app.use('/groups', groupsRoutes)
 app.use('/rules', rulesRoutes)
 app.use('/marketplace', marketplaceRoutes)
 app.use('/localgroup',localGroupRoutes)
+app.use('/posts',postRoutes)
+
 app.use('/api/users', require('./routes/users'));
 app.use('/api/chat', require('./routes/chat'));
 
@@ -98,6 +100,15 @@ function shuffle(array) {
   return array;
 }
 
+
+
+
+
+
+
+
+
+
 // cron.schedule('* * * *', () => {
 
 
@@ -105,11 +116,7 @@ function shuffle(array) {
 
 
 (async function(){
-//   var data=await axios.get(`https://api.mapbox.com/geocoding/v5/mapbox.places/151.1644,-33.8935.json?access_token=pk.eyJ1IjoianVsaWFuYnVsbCIsImEiOiJja25zbXJibW0wNHgwMnZsaHJoaDV6MTg4In0.qPBGW4XMJcsZSUCrQej8Zw`)
-//     .then(data => {
-//       return data['data']['features'][0]['text']
-//   })
-//   console.log(data)
+//
 //   var users=await User.find({ })
 //   .exec()
 // if (users.length>40){
@@ -209,8 +216,11 @@ function shuffle(array) {
 //
 //
 //
-// async function divideUsersIntoHigherGroups(theshold,level){
+// async function divideUsersIntoHigherGroups(theshold,level,localgroups){
 //
+//
+//
+// console.log("LOCALGROUpS",localgroups.length)
 //
 //     const k=Math.round(users.length/theshold)   // Groups Number
 //
@@ -220,11 +230,9 @@ function shuffle(array) {
 //
 //     var docsCopy=JSON.parse(JSON.stringify(users))
 //     let vectors=users.map(item=>{return {x:item.coordinates[0],y:item.coordinates[1]}})
-// console.log(vectors)
 //   kmeans.init({k: k, runs: size, equalSize: true, normalize: false })
 //   const sum = kmeans.calc(vectors);
 //
-//   console.log(vectors)
 //
 //   for (var vector of vectors){
 //     for (var user of docsCopy){
@@ -241,13 +249,13 @@ function shuffle(array) {
 //       groups[`${user.k}`]=[user]
 //     }
 //   }
-// console.log(groups)
 //   var highermembers=[]
 //
 //   for (const group in groups) {
 //     var latlongroup=groups[`${group}`].map(member=>{return {lat: member.coordinates[0], lon: member.coordinates[1]}})
 //     var coordinates=groups[`${group}`].map(member=>{return [member.coordinates[0],member.coordinates[1]]})
 //     var userIds=groups[`${group}`].map(member=>{return member._id})
+//     console.log("USERIDS",userIds)
 //
 //     var bias = 10
 //
@@ -262,13 +270,26 @@ function shuffle(array) {
 //   distancesArray.sort()
 //   var location=await axios.get(`https://api.mapbox.com/geocoding/v5/mapbox.places/${result[0]['centroid'][1]},${result[0]['centroid'][0]}.json?access_token=pk.eyJ1IjoianVsaWFuYnVsbCIsImEiOiJja25zbXJibW0wNHgwMnZsaHJoaDV6MTg4In0.qPBGW4XMJcsZSUCrQej8Zw`)
 //     .then(data => {
-//       console.log(data['data']['features'].length)
 //       if(data['data']['features'].length>0){
-//         console.log("mapbox location!!!",data['data']['features'][0]['text'])
 //
 //         return data['data']['features'][0]['text']
 //       }
 //   })
+//
+//   var associatedlocalgroups=[]
+//   for (var localgroup of localgroups){
+//     console.log(typeof localgroup.members[0])
+//     console.log(typeof userIds[0])
+//
+//   var c = userIds.filter(approvee => localgroup.members.includes(approvee))
+//   console.log("c.length",c.length)
+//   if (c.length/localgroup.members.length>0.5){
+//   associatedlocalgroups.push(localgroup._id)
+//   }
+//
+//   }
+//   console.log("associatedlocalgroups",associatedlocalgroups)
+//
 //     var id=new mongoose.Types.ObjectId().toString()
 //     var shuffledmembers=shuffle(userIds)
 //     var shuffledmemberssliced=shuffledmembers.slice(0,40)
@@ -278,6 +299,7 @@ function shuffle(array) {
 //       type:"localgroup",
 //       radius:distancesArray[0],
 //       location:location,
+//       associatedlocalgroups:associatedlocalgroups,
 //       centroid:result[0]['centroid'],
 //       members:[...shuffledmembers.slice(0,40)],
 //       allmembers: [...userIds]
@@ -330,23 +352,25 @@ function shuffle(array) {
 // })
 //
 // await Promise.all(promises);
+// var localgroups=await LocalGroup.find().exec()
+// console.log(localgroups.length)
 //
 // if (users.length>160){
-// await divideUsersIntoHigherGroups(160,1)
+// await divideUsersIntoHigherGroups(160,1,localgroups)
 // }
 // if (users.length>640){
-//   await divideUsersIntoHigherGroups(640,2)
+//   await divideUsersIntoHigherGroups(640,2,localgroups)
 // }
 // if (users.length>2560){
-//   await divideUsersIntoHigherGroups(2560,3)
+//   await divideUsersIntoHigherGroups(2560,3,localgroups)
 // }
 // if (users.length>10240){
-//   await divideUsersIntoHigherGroups(10240,4)
+//   await divideUsersIntoHigherGroups(10240,4,localgroups)
 // }
+
 //
-//
-//
-//
+// console.log("finished first phase!!!!!!!!!!!")
+
 //
 // var rules=await Rule.find({ }).exec()
 // var localgroups=await LocalGroup.find({ }).exec()
@@ -357,9 +381,9 @@ function shuffle(array) {
 //   if (higherlevelgroupobject.hasOwnProperty(`${group.level}`)){
 //     higherlevelgroupobject[`${group.level}`].push(group)
 //   }else{
-//   higherlevelgroupobject[`${group.level}`]=[group]
+//     higherlevelgroupobject[`${group.level}`]=[group]
 //   }}
-// console.log("higherlevelgroupobject",higherlevelgroupobject)
+//   console.log("higherlevelgroupobject",higherlevelgroupobject)
 //
 //
 //         var rulesgroups={}
@@ -377,7 +401,7 @@ function shuffle(array) {
 //   }
 //   approval.sort((a, b) => (a.overlap.length < b.overlap.length) ? 1 : -1)
 //
-//   const updatedGroup=LocalGroup.findByIdAndUpdate(approval[0]["localgroup"], {$addToSet : {
+//   const updatedGroup=await LocalGroup.findByIdAndUpdate(approval[0]["localgroup"], {$addToSet : {
 //   rules:rule._id
 // }}, function(err, result){
 //
@@ -385,7 +409,7 @@ function shuffle(array) {
 // console.log(err)
 //         }
 //         else{
-//           // console.log(result)
+//           console.log(result)
 //         }
 //
 //     })
@@ -395,12 +419,12 @@ function shuffle(array) {
 // for (var rule of rulesgroups['1']){
 //   var approval=[]
 //   for (var group of higherlevelgroupobject['1']){
-//     var c = rule.approval.filter(approvee => group.members.includes(approvee))
+//     var c = rule.approval.filter(approvee => group.allmembers.includes(approvee))
 //     approval.push({group:group._id,overlap:c})
 //   }
 //   approval.sort((a, b) => (a.overlap.length < b.overlap.length) ? 1 : -1)
 //
-//   const updatedGroup=HigherLevelGroup.findByIdAndUpdate(approval[0]["group"], {$addToSet : {
+//   const updatedGroup=await HigherLevelGroup.findByIdAndUpdate(approval[0]["group"], {$addToSet : {
 //   rules:rule._id
 // }}, function(err, result){
 //
@@ -412,6 +436,17 @@ function shuffle(array) {
 //         }
 //
 //     })
+//
+//     const updatedRule=await Rule.findByIdAndUpdate(rule._id, {group:approval[0]["group"]}, function(err, result){
+//
+//           if(err){
+//   console.log(err)
+//           }
+//           else{
+//             console.log(result)
+//           }
+//
+//       })
 //
 // }
 // }
@@ -421,12 +456,12 @@ function shuffle(array) {
 // for (var rule of rulesgroups['2']){
 //   var approval=[]
 //   for (var group of higherlevelgroupobject['2']){
-//     var c = rule.approval.filter(approvee => group.members.includes(approvee))
+//     var c = rule.approval.filter(approvee => group.allmembers.includes(approvee))
 //     approval.push({group:group._id,overlap:c})
 //   }
 //   approval.sort((a, b) => (a.overlap.length < b.overlap.length) ? 1 : -1)
 //
-//   const updatedGroup=HigherLevelGroup.findByIdAndUpdate(approval[0]["group"], {$addToSet : {
+//   const updatedGroup=await HigherLevelGroup.findByIdAndUpdate(approval[0]["group"], {$addToSet : {
 //   rules:rule._id
 // }}, function(err, result){
 //
@@ -434,10 +469,21 @@ function shuffle(array) {
 // console.log(err)
 //         }
 //         else{
-//           // console.log(result)
+//           console.log(result)
 //         }
 //
 //     })
+//
+//     const updatedRule=await Rule.findByIdAndUpdate(rule._id, {group:approval[0]["group"]}, function(err, result){
+//
+//           if(err){
+//   console.log(err)
+//           }
+//           else{
+//             console.log(result)
+//           }
+//
+//       })
 // }
 // }
 //
@@ -446,12 +492,12 @@ function shuffle(array) {
 // for (var rule of rulesgroups['3']){
 //   var approval=[]
 //   for (var group of higherlevelgroupobject['3']){
-//     var c = rule.approval.filter(approvee => group.members.includes(approvee))
+//     var c = rule.approval.filter(approvee => group.allmembers.includes(approvee))
 //     approval.push({group:group._id,overlap:c})
 //   }
 //   approval.sort((a, b) => (a.overlap.length < b.overlap.length) ? 1 : -1)
 //
-//   const updatedGroup=HigherLevelGroup.findByIdAndUpdate(approval[0]["group"], {$addToSet : {
+//   const updatedGroup=await HigherLevelGroup.findByIdAndUpdate(approval[0]["group"], {$addToSet : {
 //   rules:rule._id
 // }}, function(err, result){
 //
@@ -463,6 +509,17 @@ function shuffle(array) {
 //         }
 //
 //     })
+//
+//     const updatedRule=await Rule.findByIdAndUpdate(rule._id, {group:approval[0]["group"]}, function(err, result){
+//
+//           if(err){
+//   console.log(err)
+//           }
+//           else{
+//             console.log(result)
+//           }
+//
+//       })
 // }
 // }
 })()

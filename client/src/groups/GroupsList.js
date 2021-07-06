@@ -107,12 +107,13 @@ console.log(this.state.localgroups)
 
 if(this.state.higherlevelgroups){higherlevelgroupsmapped=this.state.higherlevelgroups.map(item => {
 
-
       return(
         <><div key={item._id}>
           <Link exact to={"/groups/" + item._id+"/groups/higher"}>
                       <div>
                        <h3>{item.location}</h3>
+                       <h4>Group Level: {item.level}</h4>
+
                       </div></Link>
 
                   </div>
@@ -138,10 +139,10 @@ if(this.state.higherlevelgroups){higherlevelgroupsmapped=this.state.higherlevelg
 
 
       return(
-        <><div key={this.state.localgroup._id}>
-          <Link exact to={"/groups/" + this.state.localgroup._id+"/localgroup/lower"}>
+        <><div key={item._id}>
+          <Link exact to={"/groups/" + item._id+"/localgroup/lower"}>
                       <div>
-                       <h3>{this.state.localgroup.location}</h3>
+                       <h3>{item.location}</h3>
                       </div></Link>
 
                   </div>

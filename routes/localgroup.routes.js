@@ -138,17 +138,6 @@ router.route('/getmembers/:groupid').get((req, res) => {
 
 
 
-router.route('/withdrawdisapproval/:ruleId/:userId').put((req, res) => {
-  let ruleId = req.params.ruleId
-  let userId = req.params.userId;
-
-  const updatedRule=Rule.findByIdAndUpdate(ruleId, {$pull : {
-  disagree:userId
-}}).exec()
-
-
-})
-
 
 
 
@@ -342,6 +331,7 @@ router.post("/createlocalgroup", (req, res, next) => {
 router.get("/findgroups", (req, res, next) => {
 
       const items=LocalGroup.find()
+      .populate('rules')
       .exec(function(err,docs){
         if(err){
                 console.log(err);
@@ -413,14 +403,15 @@ LocalGroup.findByIdAndUpdate(groupId,{ higherlevelgroup: higherId },function(err
 console.log("populating members", groupId)
         const items=LocalGroup.find({_id:groupId})
         .populate('members')
-        .populate('rules')
-        .populate('leaders')
-        .populate('expertcandidates')
+        .populate({
+        path    : 'rules',
+        populate: { path: 'group' }
+        })
         .exec(function(err,docs){
           if(err){
                   console.log("error in populating members",err);
               }else{
-                console.log("docs in populating members",docs)
+                console.log("docs in populating members",docs[0]['rules'][0])
                   res.status(200).json({
                               data: docs
                           });
@@ -432,10 +423,12 @@ console.log("populating members", groupId)
   console.log("populating members")
           const items=HigherLevelGroup.find({_id:groupId})
           .populate('members')
-          .populate('rules')
+          .populate('associatedlocalgroups')
+          .populate({
+          path    : 'rules',
+          populate: { path: 'group' }
+          })
           .populate('higherlevelgroup')
-          .populate('leaders')
-          .populate('expertcandidates')
           .exec(function(err,docs){
             if(err){
                     console.log(err);
@@ -456,10 +449,11 @@ console.log("populating members", groupId)
     console.log("populating members")
             const items=LocalGroup.find({_id:groupId})
             .populate('members')
-            .populate('rules')
-            .populate('leaders')
+            .populate({
+           path    : 'rules',
+           populate: { path: 'group' }
+           })
             .populate('higherlevelgroup')
-            .populate('expertcandidates')
             .exec(function(err,docs){
               if(err){
                       console.log(err);
@@ -669,6 +663,8 @@ router.route('/addruletogroup/:groupId/:ruleId').put((req, res) => {
   let groupId = req.params.groupId;
   let ruleId = req.params.ruleId;
 
+console.log("ids",groupId,ruleId)
+
   const updatedGroup=LocalGroup.findByIdAndUpdate(groupId, {$addToSet : {
   rules:ruleId
 }}, function(err, result){
@@ -686,6 +682,7 @@ router.route('/addruletogroup/:groupId/:ruleId').put((req, res) => {
 router.route('/removerulefromgroup/:groupId/:ruleId').put((req, res) => {
   let groupId = req.params.groupId;
   let ruleId = req.params.ruleId;
+  console.log("removing rule form local group",groupId,ruleId)
 
   const updatedGroup=LocalGroup.findByIdAndUpdate(groupId, {$pull : {
   rules:ruleId

@@ -273,6 +273,8 @@ console.log("adding member to localgroup", groupId,userId)
       router.route('/addruletogroup/:groupId/:ruleId').put((req, res) => {
         let groupId = req.params.groupId;
         let ruleId = req.params.ruleId;
+        console.log("ids",groupId,ruleId)
+
 
         const updatedGroup=Group.findByIdAndUpdate(groupId, {$addToSet : {
         rules:ruleId
@@ -291,6 +293,8 @@ console.log("adding member to localgroup", groupId,userId)
       router.route('/removerulefromgroup/:groupId/:ruleId').put((req, res) => {
         let groupId = req.params.groupId;
         let ruleId = req.params.ruleId;
+        console.log("removing rule from normal group",groupId,ruleId)
+
 
         const updatedGroup=Group.findByIdAndUpdate(groupId, {$pull : {
         rules:ruleId
@@ -305,6 +309,47 @@ console.log("adding member to localgroup", groupId,userId)
 
           })
       })
+
+
+      router.route('/addruletohighergroup/:groupId/:ruleId').put((req, res) => {
+        let groupId = req.params.groupId;
+        let ruleId = req.params.ruleId;
+        console.log("ids",groupId,ruleId)
+
+        const updatedGroup=HigherLevelGroup.findByIdAndUpdate(groupId, {$addToSet : {
+        rules:ruleId
+      }}, function(err, result){
+
+              if(err){
+                  res.send(err)
+              }
+              else{
+                  res.send(result)
+              }
+
+          })
+      })
+
+      router.route('/removerulefromhighergroup/:groupId/:ruleId').put((req, res) => {
+        let groupId = req.params.groupId;
+        let ruleId = req.params.ruleId;
+        console.log("removing rule from higher group",groupId,ruleId)
+
+
+        const updatedGroup=HigherLevelGroup.findByIdAndUpdate(groupId, {$pull : {
+        rules:ruleId
+      }}, function(err, result){
+
+              if(err){
+                  res.send(err)
+              }
+              else{
+                  res.send(result)
+              }
+
+          })
+      })
+
 
 
       router.get("/findlocalgroup/:groupId", (req, res, next) => {
@@ -388,8 +433,10 @@ router.get("/findgroups", (req, res, next) => {
         const items=Group.find({_id:groupId})
         .populate('members')
         .populate('rules')
-        .populate('leaders')
-        .populate('expertcandidates')
+        .populate({
+       path    : 'rules',
+       populate: { path: 'group' }
+       })
         .exec(function(err,docs){
           if(err){
                   console.log(err);
@@ -405,10 +452,11 @@ router.get("/findgroups", (req, res, next) => {
       let groupId = req.params.groupId;
           const items=HigherLevelGroup.find({_id:groupId})
           .populate('members')
-          .populate('rules')
-          .populate('higherlevelgroup')
-          .populate('leaders')
-          .populate('expertcandidates')
+          .populate('associatedlocalgroups')
+          .populate({
+         path    : 'rules',
+         populate: { path: 'group' }
+         })
           .exec(function(err,docs){
             if(err){
                     console.log(err);
@@ -421,10 +469,24 @@ router.get("/findgroups", (req, res, next) => {
       })})
 
 
+      router.get("/findgroups", (req, res, next) => {
 
+            const items=Group.find()
+            .populate('members')
+            .exec(function(err,docs){
+              if(err){
+                      console.log(err);
+                  }else{
+                      res.status(200).json({
+                                  data: docs
+                              });
+            }
+
+        })})
       router.get("/findhigherlevelgroups", (req, res, next) => {
 
             const items=HigherLevelGroup.find()
+            .populate('members')
             .exec(function(err,docs){
               if(err){
                       console.log(err);
@@ -600,17 +662,6 @@ router.route('/withdrawapproval/:ruleId/:userId').put((req, res) => {
 })
 
 
-
-
-
-router.route('/removeexpert/:userId').put((req, res) => {
-  let userId = req.params.userId;
-  const updatedRule=Rule.findByIdAndUpdate(userId, {$pull : {
-  experts:userId
-}}).exec()
-
-
-})
 
 
 
