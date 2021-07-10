@@ -1,9 +1,7 @@
 const mongoose = require('mongoose');
 
 
-
-
-const groupSchema = mongoose.Schema({
+const superGroupSchema = mongoose.Schema({
   _id: mongoose.Schema.Types.ObjectId,
   title: {
     type: String,
@@ -14,14 +12,12 @@ const groupSchema = mongoose.Schema({
   location: {
     type: String,
   },
-  events:[{type:mongoose.Schema.Types.ObjectId,ref:"Event"}],
-  groupabove:{type:mongoose.Schema.Types.ObjectId,ref:"HigherLevelGroup"},
   chat: [{type:mongoose.Schema.Types.ObjectId,ref:"Chat"}],
   centroid:[Number],
   radius:Number,
   rules: [{type:mongoose.Schema.Types.ObjectId}],
-  members: [{type:mongoose.Schema.Types.ObjectId,ref:"User"}],
+  allmembers: [{type:mongoose.Schema.Types.ObjectId,ref:"User"}],
 
 })
 
-module.exports =  mongoose.model('Group', groupSchema)
+module.exports =  mongoose.model('SuperGroup', superGroupSchema)

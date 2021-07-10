@@ -4,6 +4,7 @@ const userCtrl =require( '../controllers/user.controller')
 const authCtrl =require( '../controllers/auth.controller')
 const ExpertCandidate = require("../models/expertcandidate.model");
 const User = require("../models/user.model");
+const Event = require("../models/event.model");
 const Group = require("../models/group.model");
 require('dotenv').config();
 const nodemailer = require('nodemailer');
@@ -403,6 +404,12 @@ LocalGroup.findByIdAndUpdate(groupId,{ higherlevelgroup: higherId },function(err
 console.log("populating members", groupId)
         const items=LocalGroup.find({_id:groupId})
         .populate('members')
+        .populate('groupabove')
+        .populate({
+       path    : 'events',
+       populate: { path: 'group' }
+       })
+        .populate('groupsbelow')
         .populate({
         path    : 'rules',
         populate: { path: 'group' }
@@ -412,6 +419,8 @@ console.log("populating members", groupId)
                   console.log("error in populating members",err);
               }else{
                 console.log("docs in populating members",docs[0]['rules'][0])
+                console.log("docs in populating members",docs[0]['events'][0])
+
                   res.status(200).json({
                               data: docs
                           });
@@ -423,12 +432,17 @@ console.log("populating members", groupId)
   console.log("populating members")
           const items=HigherLevelGroup.find({_id:groupId})
           .populate('members')
+          .populate('groupabove')
+          .populate({
+         path    : 'events',
+         populate: { path: 'group' }
+         })
+          .populate('groupsbelow')
           .populate('associatedlocalgroups')
           .populate({
           path    : 'rules',
           populate: { path: 'group' }
           })
-          .populate('higherlevelgroup')
           .exec(function(err,docs){
             if(err){
                     console.log(err);
@@ -629,29 +643,7 @@ router.route('/:id').delete((req, res) => {
     .catch(err => res.status(400).json('Error: ' + err));
 });
 
-router.route('/approve/:ruleId/:userId').put((req, res) => {
-  let ruleId = req.params.ruleId
-  let userId = req.params.userId;
-  console.log(ruleId,userId)
 
-  const updatedRule=Rule.findByIdAndUpdate(ruleId, {$addToSet : {
-  approval:userId
-}}).exec()
-
-
-})
-
-router.route('/withdrawapproval/:ruleId/:userId').put((req, res) => {
-  let ruleId = req.params.ruleId
-  let userId = req.params.userId;
-  console.log(ruleId,userId)
-
-  const updatedRule=Rule.findByIdAndUpdate(ruleId, {$pull : {
-  approval:userId
-}}).exec()
-
-
-})
 
 
 
@@ -686,6 +678,48 @@ router.route('/removerulefromgroup/:groupId/:ruleId').put((req, res) => {
 
   const updatedGroup=LocalGroup.findByIdAndUpdate(groupId, {$pull : {
   rules:ruleId
+}}, function(err, result){
+
+        if(err){
+            res.send(err)
+        }
+        else{
+            res.send(result)
+        }
+
+    })
+})
+
+
+
+
+router.route('/addeventtogroup/:groupId/:eventId').put((req, res) => {
+  let groupId = req.params.groupId;
+  let eventId = req.params.eventId;
+
+console.log("ids",groupId,eventId)
+
+  const updatedGroup=LocalGroup.findByIdAndUpdate(groupId, {$addToSet : {
+  events:eventId
+}}, function(err, result){
+
+        if(err){
+            res.send(err)
+        }
+        else{
+            res.send(result)
+        }
+
+    })
+})
+
+router.route('/removeeventfromgroup/:groupId/:eventId').put((req, res) => {
+  let groupId = req.params.groupId;
+  let eventId = req.params.eventId;
+  console.log("removing event form local group",groupId,eventId)
+
+  const updatedGroup=LocalGroup.findByIdAndUpdate(groupId, {$pull : {
+  events:eventId
 }}, function(err, result){
 
         if(err){

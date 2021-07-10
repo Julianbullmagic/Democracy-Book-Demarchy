@@ -85,7 +85,7 @@ if(props.higherlower=="higher"){
   return (
     <section className='section search'>
 
-      <form className='search-form' onSubmit={handleSubmit}>
+      <form className='search-form'>
         <div className='form-control'>
         <label htmlFor='name'>Rule</label>
         <input
@@ -104,9 +104,9 @@ if(props.higherlower=="higher"){
 
         />
 
+        <button onClick={(e) => handleSubmit(e)}>Submit Rule</button>
 
 
-          <input type="submit" value="Submit" />
         </div>
       </form>
     </section>

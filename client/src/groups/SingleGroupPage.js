@@ -1,8 +1,11 @@
 import React, { Component } from 'react';
+import {Link} from "react-router-dom";
 import auth from './../auth/auth-helper'
 import Newsfeed from './../post/Newsfeed'
 import CreateRuleForm from './CreateRuleForm'
+import CreateEventForm from './CreateEventForm'
 import Kmeans from 'node-kmeans';
+import {Image} from 'cloudinary-react'
 const KmeansLib = require('kmeans-same-size');
 const kmeans = require('node-kmeans');
 const mongoose = require("mongoose");
@@ -27,6 +30,7 @@ class SingleGroupPage extends Component {
              level:0,
              radius:0,
              candidates:[],
+             events:[],
              associatedlocalgroups:[],
              allmembers:[],
              allgroupsbelow:[],
@@ -39,6 +43,7 @@ class SingleGroupPage extends Component {
              updating:false
            }
            this.updateRules= this.updateRules.bind(this)
+           this.updateEvents= this.updateEvents.bind(this)
 
               }
 
@@ -53,6 +58,17 @@ class SingleGroupPage extends Component {
 componentDidUpdate(){
   console.log("rules",this.state.rules)
 
+}
+
+updateEvents(newevent){
+  console.log("newevent",newevent)
+  var eventscopy=JSON.parse(JSON.stringify(this.state.events))
+  eventscopy.push(newevent)
+  this.setState({ events:eventscopy})}
+
+componentDidUpdate(){
+console.log("rules",this.state.rules)
+console.log("events",this.state.events)
 }
 
            componentDidMount(){
@@ -75,13 +91,16 @@ componentDidUpdate(){
                       await fetch("/"+grouptype+'/populatehighergroupmembers/'+groupid).then(res => {
                         return res.json();
                       }).then(blob => {
-                        console.log("associate local groups",blob['data'][0]['associatedlocalgroups'])
+                        console.log("blob in single higher group page",grouptype,blob)
 
                    this.setState({groupData:blob['data'][0],
                    id:groupid,
                    grouptype:grouptype,
                    level:blob['data'][0]['level'],
                    associatedlocalgroups:blob['data'][0]['associatedlocalgroups'],
+                   groupabove:blob['data'][0]['groupabove'],
+                   groupsbelow:blob['data'][0]['groupsbelow'],
+                   events:blob['data'][0]['events'],
                    allmembers:blob['data'][0]['allmembers'],
                    rules: blob['data'][0]['rules'],
                    centroid: blob['data'][0]['centroid'],
@@ -123,7 +142,9 @@ componentDidUpdate(){
                    id:groupid,
                    grouptype:grouptype,
                    rules: blob['data'][0]['rules'],
+                   events:blob['data'][0]['events'],
                    centroid: blob['data'][0]['centroid'],
+                   groupabove:blob['data'][0]['groupabove'],
                    members: blob['data'][0]['members']})
 
                    if(blob['data'][0]['location']){
@@ -283,7 +304,7 @@ for (var item of this.state.rules){
 
 
 
-       approve(e,id){
+       approveofrule(e,id){
 var rulescopy=JSON.parse(JSON.stringify(this.state.rules))
 function checkRule() {
   return id!==auth.isAuthenticated().user._id
@@ -308,7 +329,7 @@ this.setState({rules:rulescopy})
               body: ''
          }
 
-         fetch("/"+this.state.grouptype+"/approve/" + id +"/"+ auth.isAuthenticated().user._id, options
+         fetch("/rules/approveofrule/" + id +"/"+ auth.isAuthenticated().user._id, options
 ).then(res => {
     console.log(res);
   }).catch(err => {
@@ -318,7 +339,7 @@ this.setState({rules:rulescopy})
 }
 
 
-       withdrawapproval(e,id){
+       withdrawapprovalofrule(e,id){
          var rulescopy=JSON.parse(JSON.stringify(this.state.rules))
          function checkRule(userid) {
            return userid!=auth.isAuthenticated().user._id
@@ -341,7 +362,7 @@ this.setState({rules:rulescopy})
               body: ''
          }
 
-         fetch("/"+this.state.grouptype+"/withdrawapproval/" + id +"/"+ auth.isAuthenticated().user._id, options
+         fetch("/rules/withdrawapprovalofrule/" + id +"/"+ auth.isAuthenticated().user._id, options
 ) .then(res => {
     console.log(res);
   }).catch(err => {
@@ -349,6 +370,76 @@ this.setState({rules:rulescopy})
   })
 
        }
+
+
+       approveofevent(e,id){
+var eventscopy=JSON.parse(JSON.stringify(this.state.events))
+function checkEvent() {
+  return id!==auth.isAuthenticated().user._id
+}
+for (var ev of eventscopy){
+  if (ev._id==id){
+
+ if(!ev.approval.includes(auth.isAuthenticated().user._id)){
+   ev.approval.push(auth.isAuthenticated().user._id)
+ }
+
+this.setState({events:eventscopy})
+  }
+}
+
+this.setState({events:eventscopy})
+         const options = {
+           method: 'put',
+           headers: {
+             'Content-Type': 'application/json'
+           },
+              body: ''
+         }
+
+         fetch("/events/approveofevent/" + id +"/"+ auth.isAuthenticated().user._id, options
+).then(res => {
+    console.log(res);
+  }).catch(err => {
+    console.log(err);
+  })
+
+}
+
+
+       withdrawapprovalofevent(e,id){
+         var eventscopy=JSON.parse(JSON.stringify(this.state.events))
+         function checkEvent(userid) {
+           return userid!=auth.isAuthenticated().user._id
+         }
+         for (var ev of eventscopy){
+           if (ev._id==id){
+
+
+             var filteredapproval=ev.approval.filter(checkEvent)
+             ev.approval=filteredapproval
+           }
+         }
+         this.setState({events:eventscopy})
+
+         const options = {
+           method: 'put',
+           headers: {
+             'Content-Type': 'application/json'
+           },
+              body: ''
+         }
+
+         fetch("/events/withdrawapprovalofevent/" + id +"/"+ auth.isAuthenticated().user._id, options
+) .then(res => {
+    console.log(res);
+  }).catch(err => {
+    console.log(err);
+  })
+
+       }
+
+
 
        join(e){
          var memberscopy=[...this.state.members]
@@ -446,6 +537,8 @@ this.setState({members: blob.members});
         var n = d.getTime();
         var timesincecreation=`${Math.round((n-item.timecreated)/86400000)} days since creation `
         var daysleftforhigherapproval=`${7-Math.round((n-item.timecreated)/86400000)} days left to approve this rule to be suggested to lower groups`
+        var daysleftforapproval=`${7-Math.round((n-item.timecreated)/86400000)} days left to approve this rule`
+
         if(item.group){
           var daysleftforlowerapproval=`${31-Math.round((n-item.timecreated)/86400000)} days left to approve by all related local groups.`
         }
@@ -460,9 +553,9 @@ this.setState({members: blob.members});
       {explanation}
       {item.approval.includes(auth.isAuthenticated().user._id)&&<h4>You have approved this rule</h4>}
       {item.approval.includes(auth.isAuthenticated().user._id)&&approval<3&&<h4>Try to persuade other members of why this is a good idea</h4>}
-      {!item.approval.includes(auth.isAuthenticated().user._id)&&<button onClick={(e)=>this.approve(e,item._id)}>Approve this rule?</button>}
+      {!item.approval.includes(auth.isAuthenticated().user._id)&&<button onClick={(e)=>this.approveofrule(e,item._id)}>Approve this rule?</button>}
 
-      {item.approval.includes(auth.isAuthenticated().user._id)&&<button onClick={(e)=>this.withdrawapproval(e,item._id)}>Withdraw Approval?</button>}
+      {item.approval.includes(auth.isAuthenticated().user._id)&&<button onClick={(e)=>this.withdrawapprovalofrule(e,item._id)}>Withdraw Approval?</button>}
 <button onClick={(e)=>this.seeWhoApproves(e,item.approval)}>See who approves?</button>
 
               <div>
@@ -470,13 +563,102 @@ this.setState({members: blob.members});
                {(approval>50)&&wholegroupapprovalcomponent&&wholegroupapprovalcomponent}
 
                {timesincecreation}
-               {(approval<50)&&daysleftforhigherapproval&&daysleftforhigherapproval}
-               {(approval>50)&&daysleftforlowerapproval&&daysleftforlowerapproval}
+               {(approval<50)&&this.state.level>0&&daysleftforhigherapproval&&daysleftforhigherapproval}
+               {approval<50&&this.state.level>0&&daysleftforlowerapproval&&daysleftforlowerapproval}
+               {approval<50&&this.state.level==0&&daysleftforapproval&&daysleftforapproval}
+
+\
               </div>
               <br/>
           </div>
         )
       })}
+
+
+
+
+
+          var eventscomponent=<h3>no events</h3>
+          if (this.state.members&&this.state.events&&this.props.match.params.groupId){
+
+            eventscomponent=this.state.events.map(item => {
+
+
+              var memberidstwo=this.state.members.map(item=>{return item._id})
+
+              var peoplewhoapproveincurrentgroup=item.approval.filter(approvee => memberidstwo.includes(approvee))
+
+              var approval=peoplewhoapproveincurrentgroup.length/this.state.members.length*100
+
+              if(item.group){
+                var wholegroup=item.approval.filter(approvee=>item.group.allmembers.includes(approvee))
+                var wholegroupapproval=wholegroup.length/item.group.allmembers.length*100
+                console.log("wholegroupapproval",item.approval.length,item.group.allmembers.length,wholegroupapproval,wholegroup.length,item.group.allmembers)
+                var wholegroupapprovalcomponent=<h5>{Math.round(wholegroupapproval)}% Attendance in all groups considering this event, {wholegroup.length} out of {item.group.allmembers.length} members</h5>
+
+              }
+
+              if(item.description){
+                var description=<h5>Description:{item.description}</h5>
+
+              }
+              if(item.location){
+                var location=<h5>Location:{item.location}</h5>
+
+              }
+              var images=<h5>No Images</h5>
+              if(item.images.length>0){
+                console.log("images")
+                for (var img of item.images){
+                  console.log("img",img)
+                }
+                 images=item.images.map(item=>{return <Image style={{width:200}} cloudName="julianbullmagic" publicId={item} />})
+
+              }
+              var approvalcomponent=<h5>{Math.round(approval)}% Approval in this particular event, {peoplewhoapproveincurrentgroup.length} out of {this.state.members.length} members</h5>
+
+              var d = new Date();
+              var n = d.getTime();
+              var timesincecreation=`${Math.round((n-item.timecreated)/86400000)} days since creation `
+              var daysleftforhigherapproval=`${7-Math.round((n-item.timecreated)/86400000)} days left to approve this event to be suggested to lower groups`
+              var daysleftforapproval=`${7-Math.round((n-item.timecreated)/86400000)} days left to approve this event`
+
+              if(item.group){
+                var daysleftforlowerapproval=`${31-Math.round((n-item.timecreated)/86400000)} days left to approve by all related local groups.`
+              }
+
+
+              return(
+
+                <div key={item._id}>
+                <hr/>
+                <h4>{item.title}</h4>
+            <h4>Item Level:{item.level}</h4>
+            {description}
+            {location}
+            {images}
+            {item.approval.includes(auth.isAuthenticated().user._id)&&<h4>You are attending this event</h4>}
+            {item.approval.includes(auth.isAuthenticated().user._id)&&approval<3&&<h4>Try to persuade other members of why this event is a good idea</h4>}
+            {!item.approval.includes(auth.isAuthenticated().user._id)&&<button onClick={(e)=>this.approveofevent(e,item._id)}>Attend this event?</button>}
+
+            {item.approval.includes(auth.isAuthenticated().user._id)&&<button onClick={(e)=>this.withdrawapprovalofevent(e,item._id)}>Don't want to attend anymore?</button>}
+
+                    <div>
+                     {(approval<50)&&approvalcomponent}
+                     {(approval>50)&&wholegroupapprovalcomponent&&wholegroupapprovalcomponent}
+
+                     {timesincecreation}
+                     {(approval<50)&&this.state.level>0&&daysleftforhigherapproval&&daysleftforhigherapproval}
+                     {approval<50&&this.state.level>0&&daysleftforlowerapproval&&daysleftforlowerapproval}
+                     {approval<50&&this.state.level==0&&daysleftforapproval&&daysleftforapproval}
+                    </div>
+                    <br/>
+                </div>
+              )
+            })}
+
+
+
 
 var joinOrLeave=<><button onClick={(e)=>this.join(e)}>Join Group?</button></>
 
@@ -485,7 +667,7 @@ var joinOrLeave=<><button onClick={(e)=>this.join(e)}>Join Group?</button></>
       if(memberids.includes(auth.isAuthenticated().user._id)){
         joinOrLeave=<><button onClick={(e)=>this.leave(e)}>Leave Group?</button></>
       }
-
+console.log("state",this.state)
     return (
       <React.Fragment>
           <section >
@@ -507,10 +689,23 @@ var joinOrLeave=<><button onClick={(e)=>this.join(e)}>Join Group?</button></>
           {joinOrLeave}
 
             <p>Description: <strong> {this.state.description}</strong> </p>
+
+            {this.state.groupabove&&
+              <><h2>Group Above</h2><Link className="gotogroup" exact to={"/groups/" + this.state.groupabove._id+"/groups/higher"}><h2>Group Above {this.state.title&&this.state.title}{this.state.groupabove.location}</h2></Link></>}
+          {this.state.groupsbelow&&<h2>Groups below</h2>}
+            {this.state.groupsbelow&&(this.state.level>1)&&this.state.groupsbelow.map(item=>
+              {return <Link className="gotogroup" exact to={"/groups/" + item._id+"/localgroup/higher"}> <h2>Group Below {item.title&&item.title}{item.location}</h2></Link>})}
+              {this.state.groupsbelow&&(this.state.level==1)&&this.state.groupsbelow.map(item=>
+                {return <Link className="gotogroup" exact to={"/groups/" + item._id+"/localgroup/lower"}> <h2>Group Below {item.title&&item.title}{item.location}</h2></Link>})}
             <h2>Propose a Rule</h2>
             <CreateRuleForm group={this.state.groupData} id={this.state.id} grouptype={this.state.grouptype} higherlower={this.state.highorlow} level={this.state.level} updateRules={this.updateRules}/>
+
             <h2>Group Rules: <strong>   {rulescomponent} </strong></h2>
-              <Newsfeed groupId={this.state.id} />
+            <h2>Propose an Event</h2>
+            <CreateEventForm group={this.state.groupData} id={this.state.id} grouptype={this.state.grouptype} higherlower={this.state.highorlow} level={this.state.level} updateEvents={this.updateEvents}/>
+            <h2>Group Events: <strong>   {eventscomponent} </strong></h2>
+
+              <Newsfeed groupId={this.state.id} group={this.state.groupData} />
 
           </div>
 

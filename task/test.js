@@ -70,60 +70,139 @@ describe('My test suite', async function () {
             //     })
       })
 
-          it("It should create rules in all groups at all levels", async () =>{
+//           it("It should create rules in all groups at all levels", async () =>{
+//
+//             var originallocalgroups=await chai.request(app)
+//                       .get("/localgroup/findgroups")
+//
+//             var originalhigherlevelgroups=await chai.request(app)
+//                       .get("/groups/findhigherlevelgroups")
+// console.log("originalhigherlevelgroups",originalhigherlevelgroups)
+//
+// function makeid(length) {
+//   var result           = '';
+//   var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+//   var charactersLength = characters.length;
+//   for ( var i = 0; i < length; i++ ) {
+//     result += characters.charAt(Math.floor(Math.random() *
+// charactersLength));
+//  }
+//  return result;
+// }
+//
+//
+// for(var group of originalhigherlevelgroups.body.data){
+//
+// async function addRulesToGroups(level,groupdata){
+//   for(var x=0;x<5;x++){
+//
+//   var ruleId=mongoose.Types.ObjectId()
+//   var randstring=makeid(5)
+//   var d = new Date();
+//   var n = d.getTime();
+//   const res1=await chai.request(app)
+//             .post('/rules/createrule/'+ruleId)
+//   .send({rule:`a test rule ${randstring}`,group:group._id,timecreated:n,level:level,approval:[...groupdata.members.slice(0,25)],grouptype:"localgroup"})
+// console.log(groupdata.members.slice(0,25))
+//   const res2=await chai.request(app)
+//           .put('/groups/addruletohighergroup/'+group._id+"/"+ruleId)
+//
+// }
+// }
+//
+//
+//   console.log(group)
+//   if(group.level==1){
+//   await addRulesToGroups(1,group)
+//   }
+//   if(group.level==2){
+//     await addRulesToGroups(2,group)
+//   }
+//   if(group.level==3){
+//   await addRulesToGroups(3,group)
+//   }
+//   if(group.level==4){
+// await addRulesToGroups(4,group)
+//   }
+//
+//
+//
+//
+// }
+//
+//
+// })
 
-            var originallocalgroups=await chai.request(app)
-                      .get("/localgroup/findgroups")
 
-            var originalhigherlevelgroups=await chai.request(app)
-                      .get("/groups/findhigherlevelgroups")
+it("It should create events in all groups at all levels", async () =>{
+
+  var originallocalgroups=await chai.request(app)
+            .get("/localgroup/findgroups")
+
+  var originalhigherlevelgroups=await chai.request(app)
+            .get("/groups/findhigherlevelgroups")
 console.log("originalhigherlevelgroups",originalhigherlevelgroups)
 
 function makeid(length) {
-  var result           = '';
-  var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  var charactersLength = characters.length;
-  for ( var i = 0; i < length; i++ ) {
-    result += characters.charAt(Math.floor(Math.random() *
+var result           = '';
+var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+var charactersLength = characters.length;
+for ( var i = 0; i < length; i++ ) {
+result += characters.charAt(Math.floor(Math.random() *
 charactersLength));
- }
- return result;
+}
+return result;
+}
+
+
+async function addEventsToGroups(level,groupdata){
+for(var x=0;x<5;x++){
+
+var eventId=mongoose.Types.ObjectId()
+var randstring=makeid(5)
+var d = new Date();
+var n = d.getTime();
+const res1=await chai.request(app)
+  .post('/events/createevent/'+eventId)
+.send({title:`a test event ${randstring}`,description:"a fun event",location:"Petersham",images:["xuafvwhugqpxevav7fjb"],group:groupdata._id,timecreated:n,level:level,approval:[...groupdata.members.slice(0,25)],grouptype:"localgroup"})
+console.log(groupdata.members.slice(0,25))
+if(level>0){
+  const res2=await chai.request(app)
+  .put('/groups/addeventtohighergroup/'+groupdata._id+"/"+eventId)
+}
+if(level==0){
+  const res2=await chai.request(app)
+  .put('/localgroup/addeventtogroup/'+groupdata._id+"/"+eventId)
+}
+
+}
+}
+
+for (var gr of originallocalgroups.body.data){
+  await addEventsToGroups(0,gr)
+
 }
 
 
 for(var group of originalhigherlevelgroups.body.data){
 
-async function addRulesToGroups(level,groupdata){
-  for(var x=0;x<5;x++){
 
-  var ruleId=mongoose.Types.ObjectId()
-  var randstring=makeid(5)
-  var d = new Date();
-  var n = d.getTime();
-  const res1=await chai.request(app)
-            .post('/rules/createrule/'+ruleId)
-  .send({rule:`a test rule ${randstring}`,group:group._id,timecreated:n,level:level,approval:[...groupdata.members.slice(0,25)],grouptype:"localgroup"})
-console.log(groupdata.members.slice(0,25))
-  const res2=await chai.request(app)
-          .put('/groups/addruletohighergroup/'+group._id+"/"+ruleId)
 
+
+console.log(group)
+
+if(group.level==1){
+await addEventsToGroups(1,group)
 }
+if(group.level==2){
+await addEventsToGroups(2,group)
 }
-
-
-  console.log(group)
-  if(group.level==1){
-  await addRulesToGroups(1,group)
-  }
-  if(group.level==2){
-    await addRulesToGroups(2,group)
-  }
-  if(group.level==3){
-  await addRulesToGroups(3,group)
-  }
-  if(group.level==4){
-await addRulesToGroups(4,group)
-  }
+if(group.level==3){
+await addEventsToGroups(3,group)
+}
+if(group.level==4){
+await addEventsToGroups(4,group)
+}
 
 
 
@@ -132,5 +211,6 @@ await addRulesToGroups(4,group)
 
 
 })
+
 
 })

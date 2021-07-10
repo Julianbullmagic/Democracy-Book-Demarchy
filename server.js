@@ -11,6 +11,7 @@ const authRoutes = require( './routes/auth.routes')
 const postRoutes = require( './routes/post.routes')
 const groupsRoutes = require( './routes/groups.routes')
 const rulesRoutes = require( './routes/rules.routes')
+const eventsRoutes = require( './routes/events.routes')
 const localGroupRoutes = require( './routes/localgroup.routes')
 const marketplaceRoutes = require( './routes/marketplace.routes')
 const fileUpload = require('express-fileupload');
@@ -22,6 +23,7 @@ const fs = require("fs");
 var cron = require('node-cron');
 const User = require("./models/user.model");
 const Rule = require("./models/rule.model");
+const Event = require("./models/event.model");
 const KmeansLib = require('kmeans-same-size');
 var kmeans = new KmeansLib();
 const LocalGroup = require("./models/localgroup.model");
@@ -76,6 +78,8 @@ app.use('/', postRoutes)
 app.use('/groups', groupsRoutes)
 app.use('/rules', rulesRoutes)
 app.use('/marketplace', marketplaceRoutes)
+app.use('/events', eventsRoutes)
+
 app.use('/localgroup',localGroupRoutes)
 app.use('/posts',postRoutes)
 
@@ -116,7 +120,7 @@ function shuffle(array) {
 
 
 (async function(){
-//
+// var localgroups=[]
 //   var users=await User.find({ })
 //   .exec()
 // if (users.length>40){
@@ -192,6 +196,7 @@ function shuffle(array) {
 // // console.log(docs)
 //     }
 //   })
+//   localgroups.push(newGroup)
 //
 // for(var member of groups[group]){
 //   console.log(member._id,id)
@@ -216,17 +221,15 @@ function shuffle(array) {
 //
 //
 //
-// async function divideUsersIntoHigherGroups(theshold,level,localgroups){
+// async function divideUsersIntoHigherGroups(theshold,level,localgroups,groupsonelevelbelow){
 //
 //
 //
-// console.log("LOCALGROUpS",localgroups.length)
 //
 //     const k=Math.round(users.length/theshold)   // Groups Number
 //
 //     console.log("k",k)
 //     const size = theshold // Group size
-//     console.log("size",size)
 //
 //     var docsCopy=JSON.parse(JSON.stringify(users))
 //     let vectors=users.map(item=>{return {x:item.coordinates[0],y:item.coordinates[1]}})
@@ -251,11 +254,12 @@ function shuffle(array) {
 //   }
 //   var highermembers=[]
 //
+//   var highergroups=[]
+//
 //   for (const group in groups) {
 //     var latlongroup=groups[`${group}`].map(member=>{return {lat: member.coordinates[0], lon: member.coordinates[1]}})
 //     var coordinates=groups[`${group}`].map(member=>{return [member.coordinates[0],member.coordinates[1]]})
 //     var userIds=groups[`${group}`].map(member=>{return member._id})
-//     console.log("USERIDS",userIds)
 //
 //     var bias = 10
 //
@@ -282,13 +286,27 @@ function shuffle(array) {
 //     console.log(typeof userIds[0])
 //
 //   var c = userIds.filter(approvee => localgroup.members.includes(approvee))
-//   console.log("c.length",c.length)
 //   if (c.length/localgroup.members.length>0.5){
 //   associatedlocalgroups.push(localgroup._id)
 //   }
 //
 //   }
-//   console.log("associatedlocalgroups",associatedlocalgroups)
+//   var associatedhighergroupsdirectlybelow=[]
+//
+// if(groupsonelevelbelow){
+//   for (var groupbelow of groupsonelevelbelow){
+// console.log("groupbelow",groupbelow)
+//   var c = userIds.filter(approvee => groupbelow.allmembers.includes(approvee))
+//   console.log("c.length",c.length)
+//   if (c.length/groupbelow.allmembers.length>0.75){
+//   associatedhighergroupsdirectlybelow.push(groupbelow._id)
+//   }
+//
+//   }
+// }
+// console.log("associatedhighergroupsdirectlybelow",associatedhighergroupsdirectlybelow)
+//
+//
 //
 //     var id=new mongoose.Types.ObjectId().toString()
 //     var shuffledmembers=shuffle(userIds)
@@ -304,6 +322,14 @@ function shuffle(array) {
 //       members:[...shuffledmembers.slice(0,40)],
 //       allmembers: [...userIds]
 //     });
+//     if (level==1){
+//       newGroup.groupsbelow=associatedlocalgroups
+//
+//     }
+//     if (level>1){
+//       newGroup.groupsbelow=associatedhighergroupsdirectlybelow
+//     }
+//     highergroups.push(newGroup)
 //
 //
 //     newGroup.save((err,docs) => {
@@ -331,6 +357,7 @@ function shuffle(array) {
 //     await Promise.all(promises);
 //
 //   }
+//   return highergroups
 // }
 //
 // await HigherLevelGroup.deleteMany({}).then(function(){
@@ -352,21 +379,67 @@ function shuffle(array) {
 // })
 //
 // await Promise.all(promises);
-// var localgroups=await LocalGroup.find().exec()
-// console.log(localgroups.length)
+//
+//
 //
 // if (users.length>160){
-// await divideUsersIntoHigherGroups(160,1,localgroups)
+// var levelonegroups=await divideUsersIntoHigherGroups(160,1,localgroups)
 // }
 // if (users.length>640){
-//   await divideUsersIntoHigherGroups(640,2,localgroups)
+//   var leveltwogroups=await divideUsersIntoHigherGroups(640,2,localgroups,levelonegroups)
+//
 // }
 // if (users.length>2560){
-//   await divideUsersIntoHigherGroups(2560,3,localgroups)
+//   var levelthreegroups=await divideUsersIntoHigherGroups(2560,3,localgroups,leveltwogroups)
 // }
 // if (users.length>10240){
-//   await divideUsersIntoHigherGroups(10240,4,localgroups)
+//   var levelfourgroups=await divideUsersIntoHigherGroups(10240,4,localgroups,levelthreegroups)
 // }
+//
+// for (var levelonegroup of levelonegroups){
+//   for (var higher of levelonegroup.groupsbelow){
+//     await LocalGroup.findByIdAndUpdate(higher, { groupabove:levelonegroup._id },
+//                               function (err, docs) {
+//       if (err){
+//           console.log(err)
+//       }
+//       else{
+//           // console.log("Updated User : ", docs);
+//       }
+//   })
+//   }
+// }
+//
+// for (var leveltwogroup of leveltwogroups){
+//   for (var highertwo of leveltwogroup.groupsbelow){
+//     await HigherLevelGroup.findByIdAndUpdate(highertwo, { groupabove:leveltwogroup._id },
+//                               function (err, docs) {
+//       if (err){
+//           console.log(err)
+//       }
+//       else{
+//           // console.log("Updated User : ", docs);
+//       }
+//   })
+//   }
+// }
+// for (var levelthreegroup of levelthreegroups){
+//   for (var higherthree of levelthreegroup.groupsbelow){
+//     await HigherLevelGroup.findByIdAndUpdate(higherthree, { groupabove:levelthreegroup._id },
+//                               function (err, docs) {
+//       if (err){
+//           console.log(err)
+//       }
+//       else{
+//           // console.log("Updated User : ", docs);
+//       }
+//   })
+//   }
+// }
+
+
+
+
 
 //
 // console.log("finished first phase!!!!!!!!!!!")
@@ -511,6 +584,156 @@ function shuffle(array) {
 //     })
 //
 //     const updatedRule=await Rule.findByIdAndUpdate(rule._id, {group:approval[0]["group"]}, function(err, result){
+//
+//           if(err){
+//   console.log(err)
+//           }
+//           else{
+//             console.log(result)
+//           }
+//
+//       })
+// }
+// }
+//
+//
+// var events=await Event.find({ }).exec()
+// var localgroups=await LocalGroup.find({ }).exec()
+// var higherlevelgroups=await HigherLevelGroup.find({ }).exec()
+//
+// var higherlevelgroupobject={}
+// for (var group of higherlevelgroups){
+//   if (higherlevelgroupobject.hasOwnProperty(`${group.level}`)){
+//     higherlevelgroupobject[`${group.level}`].push(group)
+//   }else{
+//     higherlevelgroupobject[`${group.level}`]=[group]
+//   }}
+//
+//         var eventsgroups={}
+//         for (let ev of events){
+//           if (eventsgroups.hasOwnProperty(`${ev.level}`)){
+//             eventsgroups[`${ev.level}`].push(ev)
+//           }else{
+//             eventsgroups[`${ev.level}`]=[ev]
+//           }}
+// for (let ev of eventsgroups['0']){
+//   var approval=[]
+//   for (var group of localgroups){
+//     var c = ev.approval.filter(approvee => group.members.includes(approvee))
+//     approval.push({localgroup:group._id,overlap:c})
+//   }
+//   approval.sort((a, b) => (a.overlap.length < b.overlap.length) ? 1 : -1)
+//
+//   const updatedGroup=await LocalGroup.findByIdAndUpdate(approval[0]["localgroup"], {$addToSet : {
+//   events:ev._id
+// }}, function(err, result){
+//
+//         if(err){
+// console.log(err)
+//         }
+//         else{
+//           console.log(result)
+//         }
+//
+//     })
+//
+// }
+// if(eventsgroups['1']){
+// for (let ev of eventsgroups['1']){
+//   var approval=[]
+//   for (var group of higherlevelgroupobject['1']){
+//     var c = ev.approval.filter(approvee => group.allmembers.includes(approvee))
+//     approval.push({group:group._id,overlap:c})
+//   }
+//   approval.sort((a, b) => (a.overlap.length < b.overlap.length) ? 1 : -1)
+//
+//   const updatedGroup=await HigherLevelGroup.findByIdAndUpdate(approval[0]["group"], {$addToSet : {
+//   events:ev._id
+// }}, function(err, result){
+//
+//         if(err){
+// console.log(err)
+//         }
+//         else{
+//           console.log(result)
+//         }
+//
+//     })
+//
+//     const updatedRule=await Event.findByIdAndUpdate(rule._id, {group:approval[0]["group"]}, function(err, result){
+//
+//           if(err){
+//   console.log(err)
+//           }
+//           else{
+//             console.log(result)
+//           }
+//
+//       })
+//
+// }
+// }
+//
+//
+// if(eventsgroups['2']){
+// for (let ev of eventsgroups['2']){
+//   var approval=[]
+//   for (var group of higherlevelgroupobject['2']){
+//     var c = ev.approval.filter(approvee => group.allmembers.includes(approvee))
+//     approval.push({group:group._id,overlap:c})
+//   }
+//   approval.sort((a, b) => (a.overlap.length < b.overlap.length) ? 1 : -1)
+//
+//   const updatedGroup=await HigherLevelGroup.findByIdAndUpdate(approval[0]["group"], {$addToSet : {
+//   events:ev._id
+// }}, function(err, result){
+//
+//         if(err){
+// console.log(err)
+//         }
+//         else{
+//           console.log(result)
+//         }
+//
+//     })
+//
+//     const updatedEvent=await Event.findByIdAndUpdate(ev._id, {group:approval[0]["group"]}, function(err, result){
+//
+//           if(err){
+//   console.log(err)
+//           }
+//           else{
+//             console.log(result)
+//           }
+//
+//       })
+// }
+// }
+//
+//
+// if(eventsgroups['3']){
+// for (let ev of eventsgroups['3']){
+//   var approval=[]
+//   for (var group of higherlevelgroupobject['3']){
+//     var c = ev.approval.filter(approvee => group.allmembers.includes(approvee))
+//     approval.push({group:group._id,overlap:c})
+//   }
+//   approval.sort((a, b) => (a.overlap.length < b.overlap.length) ? 1 : -1)
+//
+//   const updatedGroup=await HigherLevelGroup.findByIdAndUpdate(approval[0]["group"], {$addToSet : {
+//   events:ev._id
+// }}, function(err, result){
+//
+//         if(err){
+// console.log(err)
+//         }
+//         else{
+//           console.log(result)
+//         }
+//
+//     })
+//
+//     const updatedEvent=await Event.findByIdAndUpdate(ev._id, {group:approval[0]["group"]}, function(err, result){
 //
 //           if(err){
 //   console.log(err)

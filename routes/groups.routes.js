@@ -5,6 +5,7 @@ const authCtrl =require( '../controllers/auth.controller')
 const ExpertCandidate = require("../models/expertcandidate.model");
 const User = require("../models/user.model");
 const Group = require("../models/group.model");
+const Event = require("../models/event.model");
 require('dotenv').config();
 const nodemailer = require('nodemailer');
 const Rule = require("../models/rule.model");
@@ -350,6 +351,86 @@ console.log("adding member to localgroup", groupId,userId)
           })
       })
 
+      router.route('/addeventtogroup/:groupId/:eventId').put((req, res) => {
+        let groupId = req.params.groupId;
+        let eventId = req.params.eventId;
+
+      console.log("ids",groupId,eventId)
+
+        const updatedGroup=LocalGroup.findByIdAndUpdate(groupId, {$addToSet : {
+        events:eventId
+      }}, function(err, result){
+
+              if(err){
+                  res.send(err)
+              }
+              else{
+                  res.send(result)
+              }
+
+          })
+      })
+
+      router.route('/removeeventfromgroup/:groupId/:eventId').put((req, res) => {
+        let groupId = req.params.groupId;
+        let eventId = req.params.eventId;
+        console.log("removing event form local group",groupId,eventId)
+
+        const updatedGroup=LocalGroup.findByIdAndUpdate(groupId, {$pull : {
+        events:eventId
+      }}, function(err, result){
+
+              if(err){
+                  res.send(err)
+              }
+              else{
+                  res.send(result)
+              }
+
+          })
+      })
+
+
+      router.route('/addeventtohighergroup/:groupId/:eventId').put((req, res) => {
+        let groupId = req.params.groupId;
+        let eventId = req.params.eventId;
+        console.log("ids",groupId,eventId)
+
+        const updatedGroup=HigherLevelGroup.findByIdAndUpdate(groupId, {$addToSet : {
+        events:eventId
+      }}, function(err, result){
+
+              if(err){
+                  res.send(err)
+              }
+              else{
+                  res.send(result)
+              }
+
+          })
+      })
+
+      router.route('/removeeventfromhighergroup/:groupId/:eventId').put((req, res) => {
+        let groupId = req.params.groupId;
+        let eventId = req.params.eventId;
+        console.log("removing event from higher group",groupId,eventId)
+
+
+        const updatedGroup=HigherLevelGroup.findByIdAndUpdate(groupId, {$pull : {
+        events:eventId
+      }}, function(err, result){
+
+              if(err){
+                  res.send(err)
+              }
+              else{
+                  res.send(result)
+              }
+
+          })
+      })
+
+
 
 
       router.get("/findlocalgroup/:groupId", (req, res, next) => {
@@ -432,10 +513,15 @@ router.get("/findgroups", (req, res, next) => {
     let groupId = req.params.groupId;
         const items=Group.find({_id:groupId})
         .populate('members')
-        .populate('rules')
+        .populate('groupabove')
+        .populate({
+       path    : 'events',
+       populate: { path: 'group', model: LocalGroup }
+       })
+        .populate('groupsbelow')
         .populate({
        path    : 'rules',
-       populate: { path: 'group' }
+       populate: { path: 'group', model: LocalGroup }
        })
         .exec(function(err,docs){
           if(err){
@@ -453,10 +539,14 @@ router.get("/findgroups", (req, res, next) => {
           const items=HigherLevelGroup.find({_id:groupId})
           .populate('members')
           .populate('associatedlocalgroups')
+          .populate('groupabove')
           .populate({
-         path    : 'rules',
-         populate: { path: 'group' }
+         path    : 'events',
+         populate: { path: 'group', model: HigherLevelGroup }
          })
+          .populate({ path: 'groupsbelow', model: LocalGroup })
+          .populate({ path: 'groupsbelow', model: HigherLevelGroup })
+          .populate({path:'rules',populate:{ path: 'group', model: HigherLevelGroup }})
           .exec(function(err,docs){
             if(err){
                     console.log(err);
@@ -637,29 +727,7 @@ router.route('/:id').delete((req, res) => {
     .catch(err => res.status(400).json('Error: ' + err));
 });
 
-router.route('/approve/:ruleId/:userId').put((req, res) => {
-  let ruleId = req.params.ruleId
-  let userId = req.params.userId;
-  console.log(ruleId,userId)
 
-  const updatedRule=Rule.findByIdAndUpdate(ruleId, {$addToSet : {
-  approval:userId
-}}).exec()
-
-
-})
-
-router.route('/withdrawapproval/:ruleId/:userId').put((req, res) => {
-  let ruleId = req.params.ruleId
-  let userId = req.params.userId;
-  console.log(ruleId,userId)
-
-  const updatedRule=Rule.findByIdAndUpdate(ruleId, {$pull : {
-  approval:userId
-}}).exec()
-
-
-})
 
 
 

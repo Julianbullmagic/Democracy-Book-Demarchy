@@ -33,6 +33,32 @@ router.get("/:ruleId", (req, res, next) => {
     })
 
 
+
+    router.route('/approveofrule/:ruleId/:userId').put((req, res) => {
+      let ruleId = req.params.ruleId
+      let userId = req.params.userId;
+      console.log(ruleId,userId)
+
+      const updatedRule=Rule.findByIdAndUpdate(ruleId, {$addToSet : {
+      approval:userId
+    }}).exec()
+
+
+    })
+
+    router.route('/withdrawapprovalofrule/:ruleId/:userId').put((req, res) => {
+      let ruleId = req.params.ruleId
+      let userId = req.params.userId;
+      console.log(ruleId,userId)
+
+      const updatedRule=Rule.findByIdAndUpdate(ruleId, {$pull : {
+      approval:userId
+    }}).exec()
+
+
+    })
+
+
   router.route('/createrule/:ruleId').post((req, res) => {
     let ruleId = req.params.ruleId;
     console.log("req.body",req.body)

@@ -10,6 +10,7 @@ const localGroupSchema = mongoose.Schema({
   },
   centroid:[Number],
     radius:Number,
+    events:[{type:mongoose.Schema.Types.ObjectId,ref:"Event"}],
     groupabove:{type:mongoose.Schema.Types.ObjectId,ref:"HigherLevelGroup"},
   rules: [{type:mongoose.Schema.Types.ObjectId,ref:"Rule"}],
   members: [{type:mongoose.Schema.Types.ObjectId,ref:"User"}],
