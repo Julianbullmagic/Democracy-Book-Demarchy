@@ -1,5 +1,7 @@
 const mongoose =require( 'mongoose')
 const crypto =require( 'crypto')
+var random = require('mongoose-simple-random');
+
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -14,8 +16,7 @@ const userSchema = new mongoose.Schema({
     required: 'Email is required'
   },
   groupstheybelongto:[{type: mongoose.Schema.ObjectId, ref: 'Group'}],
-  higherlevellocalgroupstheybelongto:[{type: mongoose.Schema.ObjectId, ref: 'HigherLevelGroup'}],
-  higherlevelnormalgroupstheybelongto:[{type: mongoose.Schema.ObjectId, ref: 'HigherLevelGroup'}],
+  supergroups:[{type: mongoose.Schema.ObjectId, ref: 'SuperGroup'}],
   expertise:String,
   coordinates: {
     type: [Number],
@@ -41,9 +42,10 @@ const userSchema = new mongoose.Schema({
     data: Buffer,
     contentType: String
   },
+  ratings: [{type: mongoose.Schema.ObjectId, ref: 'Review'}],
   following: [{type: mongoose.Schema.ObjectId, ref: 'User'}],
   followers: [{type: mongoose.Schema.ObjectId, ref: 'User'}],
-
+  restrictions: [{type: mongoose.Schema.ObjectId, ref: 'Restriction'}],
   lastname: {
       type:String,
       maxlength: 50
@@ -60,6 +62,8 @@ const userSchema = new mongoose.Schema({
       type: Number
   }
 })
+
+userSchema.plugin(random)
 
 userSchema
   .virtual('password')

@@ -18,37 +18,75 @@ constructor(props){
       chatMessage: "",
       groups:[],
       chosengroup:'',
+      yourgroups:[],
       group:{},
+      chats:[],
+      searchedusers:[],
+      usersearchvalue:'',
+      widthcolumntwo:"0%",
+      widthcolumnthree:"60%",
+      height:"40%",
+      usertomessage:'',
+      togglechat:false
   }
   this.handleGroupChange=this.handleGroupChange.bind(this)
-  this.getGroupChat=this.getGroupChat.bind(this)
+  this.handlesearchuser=this.handlesearchuser.bind(this)
+this.messageuser=this.messageuser.bind(this)
 
-  // fetch(`/api/chat/getGroups`).then(res => {
-  //         return res.json();
-  //       }).then(info=>{
-  //         console.log("groups")
-  //         console.log(info)
-  //         this.setState({groups:info})
-  //       })
-  fetch(`${CHAT_SERVER}/getChats`)
-      .then(response => response.json())
-      .then(data=>this.props.dispatch(getGroupChats(data)))
+this.setInitialChats()
+
 }
 
-handleGroupChange(event){
+async setInitialChats(){
+
+    const groupid=await fetch('/groups/findyourgroups/'+auth.isAuthenticated().user._id).then(res => {
+       return res.json();
+     }).then(blob => {
+
+       this.setState({chosengroup:blob['data'][0]['groupstheybelongto'][0],yourgroups: [...blob['data'][0]['groupstheybelongto']]})
+       return blob['data'][0]['groupstheybelongto'][0]['_id']
+  })
+console.log("groupid",groupid)
+  await fetch(`/api/chat/getChats/${groupid}`)
+      .then(response => response.json())
+      .then(data=>{
+        console.log("get chats",data)
+        this.setState({chats:data})
+      })
+
+}
+
+
+
+
+async handlesearchuser(e){
+  e.stopPropagation();
+  e.preventDefault()
+
+await fetch(`/api/chat/finduserstomessage/${this.state.searchuservalue}`)
+    .then(response => response.json())
+    .then(data=>{
+      console.log("users",data)
+      this.setState({searchedusers:data.data})
+    })
+    this.setState({widthcolumntwo:"15%",widthcolumnthree:"50%"})
+}
+
+async handleGroupChange(event){
 
   var group=event.target.value
-  this.setState({chosengroup: event.target.value });
-  console.log(CHAT_SERVER)
-this.getGroupChat(event.target.value)
-
-}
-
-getGroupChat(group){
-  fetch(`${CHAT_SERVER}/getChats/${group}`)
+  await fetch(`/api/chat/getChats/${event.target.value}`)
       .then(response => response.json())
-      .then(data=>this.props.dispatch(getGroupChats(data)))
+      .then(data=>{
+        console.log("get chats",data)
+        this.setState({chats:data})
+      })
+      this.setState({chosengroup:group,usertomessage:""})
+
 }
+
+
+
 
     componentDidMount() {
         let server = "http://localhost:5000";
@@ -59,8 +97,10 @@ getGroupChat(group){
 
 
         this.socket.on("Output Chat Message", messageFromBackEnd => {
-            console.log(messageFromBackEnd)
-            this.props.dispatch(afterPostMessage(messageFromBackEnd));
+            console.log("messageFromBackEnd",messageFromBackEnd)
+            var chatscopy=JSON.parse(JSON.stringify(this.state.chats))
+            chatscopy.push(...messageFromBackEnd)
+            this.setState({chats:chatscopy})
         })
     }
 
@@ -76,7 +116,15 @@ getGroupChat(group){
 
     }
 
+    handlesearchuserchange = (e) => {
+      console.log(e.target.value)
+      console.log(this.state.searchuservalue)
 
+        this.setState({
+            searchuservalue: e.target.value,
+        })
+
+    }
 
 
     onDrop = (files) => {
@@ -123,15 +171,16 @@ getGroupChat(group){
 
     submitChatMessage = (e) => {
         e.preventDefault();
+        e.stopPropagation();
 
         if (this.props.user.userData && !this.props.user.userData.isAuth) {
             return alert('Please Log in first');
         }
 
 
-
         let groupId=this.state.chosengroup
         let chatMessage = this.state.chatMessage
+        let recipient = this.state.usertomessage
         let userId = auth.isAuthenticated().user._id
         let userName = auth.isAuthenticated().user.name;
         let nowTime = moment();
@@ -143,43 +192,65 @@ getGroupChat(group){
             userName,
             groupId,
             nowTime,
-            type
+            type,
+            recipient
         });
         this.setState({ chatMessage: "" })
     }
 
 
-
-
+messageuser(e,userid){
+  console.log(userid)
+  this.setState({usertomessage:userid,chosengroup:"",widthcolumntwo:"0%",widthcolumnthree:"65%",searchedusers:[]})
+  fetch(`/api/chat/getChatsWithParticularUser/${userid}`)
+      .then(response => response.json())
+      .then(data=>{
+        console.log("get chats",data)
+        this.setState({chats:data})
+      })
+}
 
     render() {
-      var chats=  <p>No conversation so far.</p>
 
-if(this.props.chats.chats){
-  chats=this.props.chats.chats.map(chat =>{
+var mappedsearchedusers=this.state.searchedusers.map(user=>{
+  return <button onClick={(e)=>this.messageuser(e,user._id)}
+ style={{borderRadius:5,padding:"1px",height:"8.5%",width:"90%"}}>{user.name}</button>
+})
+
+
+      console.log(this.state.chosengroup, this.state.chats)
+      var chats=  <p>No conversation so far.</p>
+console.log("this.state.chats",this.state.chats)
+var type=Array.isArray(this.state.chats)
+console.log(type)
+if(type==true){
+  chats=this.state.chats.map(chat =>{
     return (
       <ChatCard key={chat._id}  {...chat} />
     )
   })}
 
-
+console.log("yourgroups",this.state.yourgroups)
       var mappedgroups=  <option value="no groups">no groups</option>
       if(this.state.groups){
-        mappedgroups=this.state.groups.map(group=>{
+        mappedgroups=this.state.yourgroups.map(group=>{
           return(
-              <option key={group._id} value={group._id}>{group.title}</option>
+              <option key={group._id} value={group._id}>{group.title||group.location}</option>
           )
         })
       }return (
-            <React.Fragment>
-            <div className="chat">
+            <React.Fragment  >
 
+            <div style={{height:this.state.height}} className="chat">
                 <div className="chatcoloumn1">
+                <button style={{padding:"1px",borderRadius:"5px"}} onClick={() => {
+              this.setState({ togglechat:!this.state.togglechat,height:this.state.togglechat?"40vh":"6vh"});
+            }}>View Chat</button>
 <div className="chatrow1">
-<h2 style={{margin:"10px"}}>Choose a Group to chat with</h2>
+<h2 style={{margin:"5px"}}>Choose a Group to chat with</h2>
 <form onSubmit={this.setGroup}>
   <div >
-    <label style={{margin:"5px"}} htmlFor="room">Room</label>
+    <label style={{margin:"5px"}} htmlFor="room">Group</label>
     <select style={{margin:"5px"}} name="room" id="room" onChange={this.handleGroupChange}>
       {mappedgroups}
     </select>
@@ -188,21 +259,39 @@ if(this.props.chats.chats){
   </div>
 
 <div className="chatrow2">
-<form onSubmit={this.submitChatMessage}>
+<form>
+
 <input style={{margin:"5px"}}
-placeholder="Let's start talking"
+placeholder="Search for user to message"
 type="text"
-value={this.state.chatMessage}
-onChange={this.handleSearchChange}></input>
+value={this.state.searchuservalue}
+onChange={this.handlesearchuserchange}></input>
 
-
-
-        <button onClick={this.submitChatMessage}>Submit Message</button>
+<button onClick={this.handlesearchuser}>Search for user to message</button>
 
     </form>
+    <form>
+
+    <input style={{margin:"5px"}}
+    placeholder="Let's start talking"
+    type="text"
+    value={this.state.chatMessage}
+    onChange={this.handleSearchChange}></input>
+
+
+
+            <button onClick={this.submitChatMessage}>Submit Message</button>
+
+        </form>
     </div>
 </div>
-                <div style={{border:"white", borderStyle: "solid",borderWidth:"5px",margin:"10px"}} className="chatcoloumn2">
+
+<div style={{border:"white", borderStyle: "solid",borderWidth:"5px",margin:"10px",width:this.state.widthcolumntwo}} className="chatcoloumn2">
+
+{this.state.searchedusers&&mappedsearchedusers}
+
+</div>
+                <div style={{border:"white", borderStyle: "solid",borderWidth:"5px",margin:"10px",width:this.state.widthcolumnthree}} className="chatcoloumn3">
 
                     <div style={{ width:"90%",height: "90%",background:"#efefef",margin:"10px",  overflowY: 'scroll' }}>
                         {chats}

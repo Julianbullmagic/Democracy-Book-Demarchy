@@ -24,6 +24,10 @@ const Menu = withRouter(({history}) => (
           <HomeIcon/>
         </IconButton>
       </Link>
+      <Link to="/explanation">
+        <button id="explanation">About
+        </button>
+      </Link>
       {
         !auth.isAuthenticated() && (<span>
           <Link style={{marginLeft:"10px",

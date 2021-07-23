@@ -17,7 +17,9 @@ router.get("/:eventId", (req, res, next) => {
   })
 
 
-
+  router.route('/markeventsentdown/:eventId').put((req, res) => {
+    const updatedRule=Event.findByIdAndUpdate(req.params.eventId, {sentdown:true}).exec()
+  })
 
   router.delete("/:eventId", (req, res, next) => {
 
@@ -50,11 +52,11 @@ router.get("/:eventId", (req, res, next) => {
 
   router.route('/createevent/:eventId').post((req, res) => {
     let eventId = req.params.eventId;
-    console.log("req.body",req.body)
     var newEvent=new Event({
       _id: eventId,
       title :req.body["title"],
       description :req.body["description"],
+      grouptitle :req.body["grouptitle"],
       location:req.body["location"],
       images:req.body["images"],
       level:req.body["level"],
@@ -63,7 +65,6 @@ router.get("/:eventId", (req, res, next) => {
       approval:req.body["approval"],
       grouptype:req.body["grouptype"]
     });
-console.log("newEvent",newEvent)
 
   newEvent.save((err,doc) => {
     if(err){

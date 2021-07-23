@@ -9,8 +9,11 @@ const Event = require("../models/event.model");
 require('dotenv').config();
 const nodemailer = require('nodemailer');
 const Rule = require("../models/rule.model");
-const LocalGroup = require("../models/localgroup.model");
-const HigherLevelGroup = require("../models/higherlevelgroup.model");
+const SuperGroup = require("../models/supergroup.model");
+const Review = require("../models/userrating.model");
+const Restriction= require("../models/restriction.model");
+var random = require('mongoose-simple-random');
+
 
 const mongoose = require("mongoose");
 mongoose.set('useFindAndModify', false);
@@ -18,14 +21,90 @@ mongoose.set('useFindAndModify', false);
 
 
 
+router.post("/createreview/:reviewid", (req, res, next) => {
+   let newReview = new Review({
+     _id: req.params.reviewid,
+     rating:req.body['rating'],
+     explanation:req.body['explanation'],
+     timecreated: req.body["timecreated"],
+     userId:req.body['userId'],
+     groupId:req.body['groupId'],
+     postedBy: req.body["postedBy"]
+  });
+
+
+   newReview.save((err) => {
+     if(err){
+       res.status(400).json({
+         message: "The Item was not saved",
+         errorMessage : err.message
+      })
+     }else{
+       res.status(201).json({
+         message: "Item was saved successfully"
+      })
+     }
+   })
+})
+
+router.post("/createuserrrestriction", (req, res) => {
+
+    const restriction = new Restriction(req.body);
+console.log(restriction)
+    restriction.save((err, doc) => {
+        if (err) return res.json({ success: false, err });
+        return res.status(200).json({
+            success: true
+        });
+    });
+});
+
+router.put("/addrestrictiontouser/:user/:restriction", (req, res, next) => {
+  User.findByIdAndUpdate(req.params.user, {$push : {
+  restrictions:req.params.restriction
+  }}).exec(function(err,docs){
+    if(err){
+            console.log(err);
+        }else{
+
+            res.status(200).json({
+              data:docs,
+              message: "User updated successfully"
+                    })
+  }
+   })
+})
+
+router.get("/findreviews/:groupId/:userId", (req, res, next) => {
+  console.log("ids in server",req.params.groupId,req.params.userId)
+
+      const items=Review.find({groupId:req.params.groupId, userId:req.params.userId})
+      .exec(function(err,docs){
+        if(err){
+                console.log(err);
+            }else{
+                res.status(200).json({
+                            data: docs
+                        });
+      }
+
+  })})
+
+
 router.post("/creategroup", (req, res, next) => {
+
 
    let newGroup = new Group({
      _id: req.body['_id']||new mongoose.Types.ObjectId(),
      location:req.body['location'],
+     level:req.body['level'],
      centroid: req.body["centroid"],
-   });
-
+     members:req.body["members"],
+     allmembers:req.body["members"],
+     title:req.body['title'],
+     description:req.body['description'],
+     rules:req.body['rules'],
+  });
 
    newGroup.save((err) => {
      if(err){
@@ -41,72 +120,51 @@ router.post("/creategroup", (req, res, next) => {
    })
 })
 
+router.post("/createsupergroup", (req, res, next) => {
 
-router.put("/adddatatohigherlevelgroup/:groupId", (req, res, next) => {
-  let groupId = req.params.groupId;
-
-    HigherLevelGroup.findByIdAndUpdate(groupId, {$addToSet : {lowerGroupIds:{$each:[...req.body.newlowergroupids]}}}).exec()
-    HigherLevelGroup.findByIdAndUpdate(groupId, {$addToSet : {members:{$each:[...req.body.newgroupids]}}}).exec()
-    HigherLevelGroup.findByIdAndUpdate(groupId, {$addToSet : {allmembers:{$each:[...req.body.ids]}}}).exec()
-    HigherLevelGroup.findById(groupId).exec(function(err,docs){
-      if(err){
-              console.log(err);
-          }else{
-              res.status(200).json({
-                          data: docs
-                      })}})})
-
-                      router.put("/recallmemberfromhighergroup/:highergroupId/:memberid", (req, res, next) => {
-                          let highergroupId = req.params.highergroupId;
-                          let memberId = req.params.memberId;
-
-                           HigherLevelGroup.findByIdAndUpdate(highergroupId, {$pull : {members:memberId}}).exec()
-                           HigherLevelGroup.findById(groupId).exec(function(err,docs){
-                            if(err){
-                              console.log(err);
-                            }else{
-                              res.status(200).json({
-                                        data: docs
-                                      })}})})
+   let newSuperGroup = new SuperGroup({
+     _id: req.body['_id']||new mongoose.Types.ObjectId(),
+     location:req.body['location'],
+     centroid: req.body["centroid"],
+     allmembers:req.body["members"],
+     title:req.body['title'],
+     description:req.body['description'],
+     rules:req.body['rules'],
+  });
 
 
+   newSuperGroup.save((err,data) => {
+     if(err){
+       res.status(400).json({
+         message: "The Item was not saved",
+         errorMessage : err.message
+      })
+     }else{
+       res.status(201).json({
+         data:data,
+         message: "Item was saved successfully"
+      })
+     }
+   })
+})
 
+router.put("/addsupergrouptouser/:user/:supergroup", (req, res, next) => {
+  console.log("user and supergroup",req.params.supergroup,req.params.user)
+  User.findByIdAndUpdate(req.params.user, {$push : {
+  supergroups:req.params.supergroup
+  }}).exec(function(err,docs){
+    if(err){
+            console.log(err);
+        }else{
 
-
-                      router.get("/gethigherlevelgroup", (req, res, next) => {
-                            const items=HigherLevelGroup.find({ }, {members: 1 })
-                            .exec(function(err,docs){
-                              if(err){
-                                      console.log(err);
-                                  }else{
-                                      res.status(200).json({
-                                                  data: docs
-                                              });
-                            }
-
-                        })})
-
-
-router.put("/joinhigherlevelgroup/:groupId/:userId", (req, res, next) => {
-  let userId = req.params.userId;
-  let groupId = req.params.groupId;
-
-      const updatedGroup=HigherLevelGroup.findByIdAndUpdate(groupId, {$addToSet : {
-      members:userId
-    }}).exec()
-
-User.findByIdAndUpdate(
-  { _id: userId },
-  { higherlevelgrouptheybelongto: groupId },
-  function(err, result) {
-    if (err) {
-      res.send(err);
-    } else {
-      res.send(result);
-    }
+            res.status(200).json({
+              data:docs,
+              message: "User updated successfully"
+                    })
   }
-)
-    })
+   })
+})
+
 
 
 router.post('/sendelectionnotification/:groupName/:groupId', (req, res, next) => {
@@ -148,47 +206,6 @@ var groupName=req.params.groupName
 
     }
   }})
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-router.route('/getmembers/:groupid').get((req, res) => {
-  let groupId = req.params.groupid
-
-  Group.findById({_id:groupId})
-.populate('members')
-.populate('experts')
-  .exec(function(err,docs){
-    if(err){
-            console.log(err);
-        }else{
-
-            res.status(200).json({
-                        data: docs
-                    })
-  }
-   })
-})
-
-
-
-
-
-
-
-
-
 
 
 
@@ -243,7 +260,7 @@ return log('Email sent!!!');
 
 
 router.get("/findgroupscoordinates", (req, res, next) => {
-      const items=LocalGroup.find({ }, { _id: 1, centroid: 1 })
+      const items=Group.find({ }, { _id: 1, centroid: 1 })
       .exec(function(err,docs){
         if(err){
                 console.log(err);
@@ -259,7 +276,7 @@ router.get("/findgroupscoordinates", (req, res, next) => {
     let userId = req.params.userId;
     let groupId = req.params.groupId;
 console.log("adding member to localgroup", groupId,userId)
-        const updatedGroup=LocalGroup.findByIdAndUpdate(groupId, {$addToSet : {
+        const updatedGroup=Group.findByIdAndUpdate(groupId, {$addToSet : {
         members:userId
       }}).exec()
 
@@ -311,53 +328,12 @@ console.log("adding member to localgroup", groupId,userId)
           })
       })
 
-
-      router.route('/addruletohighergroup/:groupId/:ruleId').put((req, res) => {
-        let groupId = req.params.groupId;
-        let ruleId = req.params.ruleId;
-        console.log("ids",groupId,ruleId)
-
-        const updatedGroup=HigherLevelGroup.findByIdAndUpdate(groupId, {$addToSet : {
-        rules:ruleId
-      }}, function(err, result){
-
-              if(err){
-                  res.send(err)
-              }
-              else{
-                  res.send(result)
-              }
-
-          })
-      })
-
-      router.route('/removerulefromhighergroup/:groupId/:ruleId').put((req, res) => {
-        let groupId = req.params.groupId;
-        let ruleId = req.params.ruleId;
-        console.log("removing rule from higher group",groupId,ruleId)
-
-
-        const updatedGroup=HigherLevelGroup.findByIdAndUpdate(groupId, {$pull : {
-        rules:ruleId
-      }}, function(err, result){
-
-              if(err){
-                  res.send(err)
-              }
-              else{
-                  res.send(result)
-              }
-
-          })
-      })
-
       router.route('/addeventtogroup/:groupId/:eventId').put((req, res) => {
         let groupId = req.params.groupId;
         let eventId = req.params.eventId;
 
-      console.log("ids",groupId,eventId)
 
-        const updatedGroup=LocalGroup.findByIdAndUpdate(groupId, {$addToSet : {
+        const updatedGroup=Group.findByIdAndUpdate(groupId, {$addToSet : {
         events:eventId
       }}, function(err, result){
 
@@ -376,7 +352,7 @@ console.log("adding member to localgroup", groupId,userId)
         let eventId = req.params.eventId;
         console.log("removing event form local group",groupId,eventId)
 
-        const updatedGroup=LocalGroup.findByIdAndUpdate(groupId, {$pull : {
+        const updatedGroup=Group.findByIdAndUpdate(groupId, {$pull : {
         events:eventId
       }}, function(err, result){
 
@@ -391,44 +367,6 @@ console.log("adding member to localgroup", groupId,userId)
       })
 
 
-      router.route('/addeventtohighergroup/:groupId/:eventId').put((req, res) => {
-        let groupId = req.params.groupId;
-        let eventId = req.params.eventId;
-        console.log("ids",groupId,eventId)
-
-        const updatedGroup=HigherLevelGroup.findByIdAndUpdate(groupId, {$addToSet : {
-        events:eventId
-      }}, function(err, result){
-
-              if(err){
-                  res.send(err)
-              }
-              else{
-                  res.send(result)
-              }
-
-          })
-      })
-
-      router.route('/removeeventfromhighergroup/:groupId/:eventId').put((req, res) => {
-        let groupId = req.params.groupId;
-        let eventId = req.params.eventId;
-        console.log("removing event from higher group",groupId,eventId)
-
-
-        const updatedGroup=HigherLevelGroup.findByIdAndUpdate(groupId, {$pull : {
-        events:eventId
-      }}, function(err, result){
-
-              if(err){
-                  res.send(err)
-              }
-              else{
-                  res.send(result)
-              }
-
-          })
-      })
 
 
 
@@ -447,7 +385,18 @@ console.log("adding member to localgroup", groupId,userId)
 
 
 
-
+        router.get("/finduserrestrictions/:userId", (req, res, next) => {
+              const items=User.findById(req.params.userId)
+              .populate('restrictions')
+              .exec(function(err,docs){
+                if(err){
+                        console.log(err);
+                    }else{
+                        res.status(200).json({
+                                    data: docs
+                                });
+              }
+          })})
 
 
 
@@ -477,6 +426,7 @@ router.post("/createlocalgroup", (req, res, next) => {
 router.get("/findgroups", (req, res, next) => {
 
       const items=Group.find()
+      .populate('members')
       .exec(function(err,docs){
         if(err){
                 console.log(err);
@@ -500,63 +450,74 @@ router.get("/findgroups", (req, res, next) => {
                             data: docs
                         });
       }
-
       })
-
-
           })
 
-
-
-
-  router.get("/populatemembers/:groupId", (req, res, next) => {
-    let groupId = req.params.groupId;
-        const items=Group.find({_id:groupId})
-        .populate('members')
-        .populate('groupabove')
-        .populate({
-       path    : 'events',
-       populate: { path: 'group', model: LocalGroup }
-       })
-        .populate('groupsbelow')
-        .populate({
-       path    : 'rules',
-       populate: { path: 'group', model: LocalGroup }
-       })
-        .exec(function(err,docs){
-          if(err){
-                  console.log(err);
-              }else{
-                console.log("docs",docs)
-                  res.status(200).json({
-                              data: docs
-                          });
-        }
-    })})
-
-    router.get("/populatehighergroupmembers/:groupId", (req, res, next) => {
-      let groupId = req.params.groupId;
-          const items=HigherLevelGroup.find({_id:groupId})
-          .populate('members')
-          .populate('associatedlocalgroups')
-          .populate('groupabove')
-          .populate({
-         path    : 'events',
-         populate: { path: 'group', model: HigherLevelGroup }
-         })
-          .populate({ path: 'groupsbelow', model: LocalGroup })
-          .populate({ path: 'groupsbelow', model: HigherLevelGroup })
-          .populate({path:'rules',populate:{ path: 'group', model: HigherLevelGroup }})
+          router.get("/getlowergroupcoordsandradius/:groupId", (req, res, next) => {
+            let groupId = req.params.groupId;
+          Group.find({_id:groupId}, { _id: 1, centroid: 1, radius:1, groupsbelow:1 })
           .exec(function(err,docs){
             if(err){
                     console.log(err);
                 }else{
-                  console.log("docs",docs)
                     res.status(200).json({
                                 data: docs
                             });
           }
-      })})
+          })
+              })
+
+          router.get("/populategroupmembers/:groupId", (req, res, next) => {
+            let groupId = req.params.groupId;
+                const items=Group.find({_id:groupId})
+                .populate({
+                  path:'members',
+                  populate:{ path: 'restrictions', model: Restriction }
+                })
+                .populate('associatedlocalgroups')
+                .populate('expertcandidates')
+                .populate({
+               path    : 'groupabove',
+               model: Group }
+               )
+               .populate({
+              path    : 'groupsbelow',
+              model: Group }
+              )
+              .populate({
+                path:'rules',
+                populate:{ path: 'group', model: Group }
+              })
+                .populate({
+               path    : 'events',
+               populate: { path: 'group', model: Group }
+               })
+                .exec(function(err,docs){
+                  if(err){
+                          console.log(err);
+                      }else{
+                        console.log("docs",docs)
+                          res.status(200).json({
+                                      data: docs
+                                  });
+                }
+            })})
+
+
+router.get("/findyourgroups/:userId", (req, res, next) => {
+
+      User.find({_id:req.params.userId})
+      .populate('groupstheybelongto')
+      .exec(function(err,docs){
+        if(err){
+                console.log(err);
+            }else{
+              console.log("docs",docs)
+                res.status(200).json({
+                            data: docs
+                        });
+      }
+  })})
 
 
       router.get("/findgroups", (req, res, next) => {
@@ -573,20 +534,35 @@ router.get("/findgroups", (req, res, next) => {
             }
 
         })})
-      router.get("/findhigherlevelgroups", (req, res, next) => {
 
-            const items=HigherLevelGroup.find()
-            .populate('members')
-            .exec(function(err,docs){
-              if(err){
-                      console.log(err);
-                  }else{
-                      res.status(200).json({
-                                  data: docs
-                              });
-            }
+        router.get("/findgroupsbytitle/:title", (req, res, next) => {
 
-        })})
+              const items=Group.find({title:req.params.title})
+              .populate('members')
+              .exec(function(err,docs){
+                if(err){
+                        console.log(err);
+                    }else{
+                        res.status(200).json({
+                                    data: docs
+                                });
+              }
+
+          })})
+
+        router.get("/findsupergroups", (req, res, next) => {
+
+              const items=SuperGroup.find()
+              .exec(function(err,docs){
+                if(err){
+                        console.log(err);
+                    }else{
+                        res.status(200).json({
+                                    data: docs
+                                });
+              }
+
+          })})
 
         router.get("/getgroup/:groupId", (req, res, next) => {
           let groupId = req.params.groupId;
@@ -612,24 +588,24 @@ router.get("/findgroups", (req, res, next) => {
       let userId = req.params.userId;
       let groupId = req.params.groupId;
 
-
-      const updatedGroup=Group.findByIdAndUpdate(groupId, {$addToSet : {
+      User.findByIdAndUpdate(userId, {$addToSet : {
+      groupstheybelongto:groupId
+    }}).exec()
+      Group.findByIdAndUpdate(groupId, {$addToSet : {
       members:userId
     }}).exec()
-
-
     })
 
     router.route('/leave/:groupId/:userId').put((req, res) => {
       let userId = req.params.userId;
       let groupId = req.params.groupId;
 
-
-      const updatedGroup=Group.findByIdAndUpdate(groupId, {$pull : {
+      User.findByIdAndUpdate(userId, {$pull : {
+      groupstheybelongto:groupId
+    }}).exec()
+      Group.findByIdAndUpdate(groupId, {$pull : {
       members:userId
     }}).exec()
-
-
     })
 
 
@@ -639,113 +615,28 @@ router.get("/findgroups", (req, res, next) => {
 
 
 
-       router.route('/newhigherlevelgroup/').post((req, res) => {
-
-      let newGroup = new HigherLevelGroup({
-        _id: req.body["_id"],
-        title :req.body["title"],
-        location:req.body["location"],
-        lastcandidateshuffle:req.body["lastcandidateshuffle"],
-        description: req.body["description"],
-        centroid: req.body["centroid"],
-        rules: req.body["rules"],
-        members: req.body["members"],
-        allmembers: req.body["allmembers"],
-        lowerGroupIds:req.body["newLowerGroupIds"]
-
-      });
-
-
-
-      newGroup.save((err) => {
-        if(err){
-          res.status(400).json({
-            message: "The Item was not saved",
-            errorMessage : err.message
-         })
-        }else{
-          res.status(201).json({
-            message: "Item was saved successfully"
-         })
-        }
-      })
-      })
-
-
-
-
-
-         router.route('/deletelowergroup/:id').delete((req, res) => {
-           let groupid = req.params.id
-
-          Group.findByIdAndDelete(groupid, function(err,docs){
-            if(err){
-                    console.log(err);
-                }else{
-
-                    res.status(200).json({
-                                data: docs
-                            })
-          }
-           })
-
-
-         })
-
-         router.route('/deletehighergroup/:id').delete((req, res) => {
-           let groupid = req.params.id
-
-          HigherLevelGroup.findByIdAndDelete(groupid, function(err,docs){
-            if(err){
-                    console.log(err);
-                }else{
-
-                    res.status(200).json({
-                                data: docs
-                            })
-          }
-           })
-
-
-         })
-
-
-
-router.route('/:id').get((req, res) => {
-
-let id=req.params.id
-  Group.findById(id)
-  .populate('rules')
-  .populate('members')
-    .then(group => res.json(group))
-    .catch(err => res.status(400).json('Error: ' + err));
-});
-
-router.route('/:id').delete((req, res) => {
-  Group.findByIdAndDelete(req.params.id)
-    .then(() => res.json('Group deleted.'))
-    .catch(err => res.status(400).json('Error: ' + err));
-});
 
 
 
 
 
 
+      router.get("/findlocalgroup/:groupId", (req, res, next) => {
+            const items=Group.findById(req.params.groupId).exec(function(err,docs){
+              if(err){
+                      console.log(err);
+                  }else{
+                    console.log("localgroup",docs)
 
-router.route('/join/:groupId/:userId').put((req, res) => {
-  let userId = req.params.userId;
-  let groupId = req.params.groupId;
-
-
-  const updatedGroup=Group.findByIdAndUpdate(groupId, {$addToSet : {
-  members:userId
-}}).exec()
+                      res.status(200).json({
+                                  data: docs
+                              })
+            }
+        })})
 
 
 
 
-})
 
 router.route('/update/:id').post((req, res) => {
   Group.findById(req.params.id)
@@ -830,7 +721,7 @@ router.route('/removeuserfromgroup/:groupId/:userId').put((req, res) => {
   let userId = req.params.userId;
 
 
-  const updatedGroup=Group.findByIdAndUpdate(groupId, {$pull : {
+Group.findByIdAndUpdate(groupId, {$pull : {
   members:userId
 }}, function(err, result){
 
@@ -845,8 +736,231 @@ router.route('/removeuserfromgroup/:groupId/:userId').put((req, res) => {
 })
 
 
+router.get("/searchforgroups/:titlevalue/:locationvalue/:levelvalue", (req, res, next) => {
+  var level=parseInt(req.params.levelvalue)
+
+    Group.find({ level: level,
+    title: { $regex:req.params.titlevalue, $options: "i" },
+    location: { $regex:req.params.locationvalue, $options: "i" } })
+      .exec(function(err,docs){
+        if(err){
+                console.log(err);
+            }else{
+              console.log(docs)
+                 res.status(200).json({
+                             data: docs
+                         });
+
+      }
+  })
 
 
+
+})
+router.get("/searchforgroupsbytitleandlocation/:titlevalue/:locationvalue", (req, res, next) => {
+
+    Group.find({title: { $regex:req.params.titlevalue, $options: "i" },
+    location: { $regex:req.params.locationvalue, $options: "i" } })
+      .exec(function(err,docs){
+        if(err){
+                console.log(err);
+            }else{
+              console.log(docs)
+                 res.status(200).json({
+                             data: docs
+                         });
+
+      }
+  })
+
+
+
+})
+router.get("/searchforgroupsbytitleandlevel/:titlevalue/:levelvalue", (req, res, next) => {
+var level=parseInt(req.params.levelvalue)
+console.log("level",level)
+
+    Group.find({ level: level ,
+    title: { $regex:req.params.titlevalue, $options: "i" } })
+      .exec(function(err,docs){
+        if(err){
+                console.log(err);
+            }else{
+              console.log(docs)
+                 res.status(200).json({
+                             data: docs
+                         });
+
+      }
+  })
+
+
+
+})
+router.get("/searchforgroupsbylocationandlevel/:locationvalue/:levelvalue", (req, res, next) => {
+  var level=parseInt(req.params.levelvalue)
+
+    Group.find({ level: level,
+    location: { $regex:req.params.locationvalue, $options: "i" } })
+      .exec(function(err,docs){
+        if(err){
+                console.log(err);
+            }else{
+              console.log(docs)
+                 res.status(200).json({
+                             data: docs
+                         });
+
+      }
+  })
+
+
+
+})
+
+router.get("/searchforgroupsbylocation/:locationvalue", (req, res, next) => {
+
+    Group.find({location: { $regex:req.params.locationvalue, $options: "i" } })
+      .exec(function(err,docs){
+        if(err){
+                console.log(err);
+            }else{
+              console.log(docs)
+                 res.status(200).json({
+                             data: docs
+                         });
+
+      }
+  })
+
+
+
+})
+router.get("/searchforgroupsbytitle/:titlevalue", (req, res, next) => {
+
+    Group.find({title: { $regex:req.params.titlevalue, $options: "i" } })
+      .exec(function(err,docs){
+        if(err){
+                console.log(err);
+            }else{
+              console.log(docs)
+                 res.status(200).json({
+                             data: docs
+                         });
+
+      }
+  })
+
+
+
+})
+router.get("/searchforgroupsbylevel/:levelvalue", (req, res, next) => {
+  var level=parseInt(req.params.levelvalue)
+
+    Group.find({ level: level})
+      .exec(function(err,docs){
+        if(err){
+                console.log(err);
+            }else{
+              console.log(docs)
+                 res.status(200).json({
+                             data: docs
+                         });
+
+      }
+  })
+
+
+
+})
+
+
+
+router.post("/nominatecandidate/", (req, res, next) => {
+
+
+   let newCandidate= new ExpertCandidate({
+     _id:req.body._id,
+     name:req.body.name,
+     expertise:req.body.expertise,
+     level:req.body.level,
+     grouptitle:req.body.grouptitle,
+     timecreated:req.body.timecreated,
+     userId:req.body.userId,
+     groupId:req.body.groupId,
+     votes:[...req.body.votes]
+      })
+
+   newCandidate.save((err,candidate) => {
+     if(err){
+       res.status(400).json({
+         message: "The Item was not saved",
+         errorMessage : err.message
+      })
+     }else{
+       res.status(201).json({
+         message: "Candidate was saved successfully",
+         id:candidate._id
+      })
+     }
+   })
+})
+
+
+router.route('/addnomineetogroupobject/:nominee/:group').put((req, res) => {
+  let nomineeId = req.params.nominee
+  let groupId = req.params.group;
+
+console.log("ADDING NOMINEE TO GROUP",groupId,nomineeId)
+
+const updatedGroup=Group.findByIdAndUpdate(groupId, {$addToSet : {
+expertcandidates:nomineeId
+}}, function(err, result){
+
+      if(err){
+          res.send(err)
+      }
+      else{
+          res.send(result)
+      }
+
+  })
+
+
+})
+
+
+
+
+
+router.route('/removenomineefromgroupobject/:nominee/:group').put((req, res) => {
+  let nomineeId = req.params.nominee
+  let groupId = req.params.group;
+  console.log("removing candidate from group object",nomineeId,groupId)
+
+
+  const updatedGroup=Group.findByIdAndUpdate(groupId, {$pull : {
+  expertcandidates:nomineeId
+}}).exec()
+})
+
+router.route('/approveofcandidate/:candidateId/:userId').put((req, res) => {
+  let candidateId = req.params.candidateId
+  let userId = req.params.userId;
+
+  const updatedCandidate=ExpertCandidate.findByIdAndUpdate(candidateId, {$addToSet : {
+  votes:userId
+}}).exec()
+})
+
+router.route('/withdrawapprovalofcandidate/:candidateId/:userId').put((req, res) => {
+  let candidateId = req.params.candidateId
+  let userId = req.params.userId;
+
+  const updatedCandidate=ExpertCandidate.findByIdAndUpdate(candidateId, {$pull : {
+  votes:userId
+}}).exec()
+})
 
 
 

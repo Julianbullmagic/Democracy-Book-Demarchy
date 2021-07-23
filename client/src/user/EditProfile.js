@@ -82,7 +82,7 @@ export default function EditProfile({ match }) {
     }
 
   }, [match.params.userId])
-  
+
   const clickSubmit = () => {
     let userData = new FormData()
     values.name && userData.append('name', values.name)

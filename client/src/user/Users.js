@@ -13,6 +13,7 @@ import ArrowForward from '@material-ui/icons/ArrowForward'
 import Person from '@material-ui/icons/Person'
 import {Link} from 'react-router-dom'
 import {list} from './api-user.js'
+import ChatPage from "./../ChatPage/ChatPage"
 
 const useStyles = makeStyles(theme => ({
   root: theme.mixins.gutters({
@@ -25,7 +26,7 @@ const useStyles = makeStyles(theme => ({
   }
 }))
 
-export default function Users() { 
+export default function Users() {
   const classes = useStyles()
   const [users, setUsers] = useState([])
 
@@ -72,6 +73,8 @@ export default function Users() {
                })
              }
         </List>
+        <ChatPage/>
+
       </Paper>
     )
 }

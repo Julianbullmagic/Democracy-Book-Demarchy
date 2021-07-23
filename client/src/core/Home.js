@@ -9,6 +9,8 @@ import unicornbikeImg from './../assets/images/unicornbike.jpg'
 import Grid from '@material-ui/core/Grid'
 import auth from './../auth/auth-helper'
 import FindPeople from './../user/FindPeople'
+import background from "./2170171.jpg";
+
 const KmeansLib = require('kmeans-same-size');
 
 
@@ -35,14 +37,10 @@ export default function Home({history}){
 
             <Grid item xs={12}>
               <Card className="card">
-              <br/>
-              <br/>
-              <br/>
-              <br/>
 
 
-                  <h3>The strong take what they can while the weak suffer what they must?
-                  &^%# no, try Democracy Book instead.</h3>
+
+
 
               </Card>
             </Grid>
@@ -50,8 +48,7 @@ export default function Home({history}){
         }
         {defaultPage &&
           <>
-          <Grid container spacing={8}>
-
+<div style={{ backgroundImage: `url(${background})` }}>
           <br/>
           <br/>
           <br/>
@@ -76,7 +73,7 @@ export default function Home({history}){
                           <h5>4)The should be close to 0% unemployment as this gives us much more freedom to choose our career. If
                           jobs are made redundant by automation we will guarantee these people lose no income. We will pay them
                           to retrain and find a new job</h5>
-                          <h5>5)Criminals will be able to work in any career they like, 
+                          <h5>5)Criminals will be able to work in any career they like,
                           be paid the same as people doing the same job and their freedom should be restricted no more than is
                           necessary to protect the rest of the population from their violent or dangerous behaviour</h5>
                           <h5>6)There should be heavy restrictions on political marketing and lobbying in order to prevent collective decisions
@@ -85,10 +82,7 @@ export default function Home({history}){
                           use of the media and people should be encouraged to inform themselves about the qualifications of leaders</h5>
 
 
-            <Grid item xs={8} sm={7}>
-            </Grid>
-
-          </Grid>
+</div>
           <ChatPage/>
           </>
         }

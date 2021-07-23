@@ -1,6 +1,4 @@
 const mongoose = require('mongoose');
-const User = require("../models/user.model");
-const Suggestion = require("../models/suggestion.model");
 
 
 const ruleSchema = mongoose.Schema({
@@ -10,10 +8,12 @@ const ruleSchema = mongoose.Schema({
     required: true
   },
   explanation:String,
-  group:{type:mongoose.Schema.Types.ObjectId,ref:"HigherLevelGroup"},
+  grouptitle:String,
+  group:{type:mongoose.Schema.Types.ObjectId,ref:"Group"},
   approval: [{type:mongoose.Schema.Types.ObjectId,ref:"User"}],
   coordinates:[Number],
   timecreated:Number,
+  sentdown:{ type: Boolean, default: false },
   level:Number,
   grouptype:String
 })

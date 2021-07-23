@@ -6,8 +6,10 @@ const config =require( './../config/config')
 const signin = async (req, res) => {
   try {
     let user = await User.findOne({
-      "email": req.body.email
-    })
+      "email": { $regex: new RegExp(req.body.email, "i") }
+    }).populate("supergroups")
+    .populate("supergroups")
+    .populate("restrictions")
     console.log("user")
 console.log(user)
     if (!user)
@@ -32,8 +34,7 @@ console.log(user)
     return res.json({
       token,
       user: {_id: user._id, name: user.name,coordinates:user.coordinates, email: user.email, localgroup:user.localgroup,
-        groupstheybelongto:user.groupstheybelongto,higherlevellocalgroupstheybelongto:user.higherlevellocalgroupstheybelongto,
-      higherlevelnormalgroupstheybelongto:user.higherlevelnormalgroupstheybelongto}
+        groupstheybelongto:user.groupstheybelongto,supergroups:user.supergroups}
     })
   } catch (err) {
     console.log(err)

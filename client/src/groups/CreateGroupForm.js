@@ -1,5 +1,6 @@
 import React, {useRef,useState} from 'react'
 import auth from '../auth/auth-helper'
+const axios = require('axios');
 
 
 
@@ -16,12 +17,23 @@ const [toggle, setToggle] = useState(false);
 
 
 
-function handleSubmit(e) {
+async function handleSubmit(e) {
+  e.preventDefault()
+      var location=await axios.get(`https://api.mapbox.com/geocoding/v5/mapbox.places/${auth.isAuthenticated().user.coordinates[1]},${auth.isAuthenticated().user.coordinates[0]}.json?access_token=pk.eyJ1IjoianVsaWFuYnVsbCIsImEiOiJja25zbXJibW0wNHgwMnZsaHJoaDV6MTg4In0.qPBGW4XMJcsZSUCrQej8Zw`)
+        .then(data => {
+          if(data['data']['features'].length>0){
+  console.log(data['data']['features'][0]['place_name'])
+            return data['data']['features'][0]['place_name']
 
+          }
+      })
 
     const newPost={
       title: titleValue.current.value,
       description:descriptionValue.current.value,
+      location:location,
+      level:0,
+      members:[auth.isAuthenticated().user._id],
       centroid:auth.isAuthenticated().user.coordinates,
       rule1:rule1Value.current.value,
       rule2:rule2Value.current.value,
@@ -29,17 +41,30 @@ function handleSubmit(e) {
       rule4:rule4Value.current.value,
 
     }
+    console.log(auth.isAuthenticated().user.name)
     console.log(newPost)
     const options={
         method: "POST",
         body: JSON.stringify(newPost),
         headers: {
             "Content-type": "application/json; charset=UTF-8"}}
+            const optionstwo={
+                method: "PUT",
+                body: "",
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"}}
 
-
-      fetch("groups/add", options)
+      await fetch("groups/creategroup", options)
               .then(response => response.json()).then(json => console.log(json));
+    var supergroup=await fetch("groups/createsupergroup", options)
+              .then(response => response.json()).then(json => {
+                console.log(json)
+              return json.data});
 
+    await fetch("groups/addsupergrouptouser/"+auth.isAuthenticated().user._id+"/"+supergroup._id, optionstwo)
+                        .then(response => response.json()).then(json => {
+                          console.log(json)
+                        });
 
 }
 

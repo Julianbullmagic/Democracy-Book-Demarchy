@@ -12,7 +12,8 @@ const superGroupSchema = mongoose.Schema({
   location: {
     type: String,
   },
-  chat: [{type:mongoose.Schema.Types.ObjectId,ref:"Chat"}],
+  groups:[{type:mongoose.Schema.Types.ObjectId,ref:"Group"}],
+  events: [{type:mongoose.Schema.Types.ObjectId,ref:"Event"}],
   centroid:[Number],
   radius:Number,
   rules: [{type:mongoose.Schema.Types.ObjectId}],

@@ -186,11 +186,11 @@ if (item.preview){
   <>
   <form className='search-form'>
           <div className='form-control'>
-          <label htmlFor='name'>Write Post</label>
+          {props.inthisgroup&&<label htmlFor='name'>Write Post</label>}
 
-          <textarea onChange={(e) => setPost(e.target.value)} ref={postArea} id="story" rows="5" cols="33" />
+        {props.inthisgroup&&  <textarea onChange={(e) => setPost(e.target.value)} ref={postArea} id="story" rows="5" cols="33" />}
 
-            <button onClick={(e) => handleSubmit(e)}>New Post?</button>
+            {props.inthisgroup&&<button onClick={(e) => handleSubmit(e)}>New Post?</button>}
 
             {preview&&previewmapped}
           </div>

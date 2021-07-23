@@ -42,8 +42,6 @@ router.get("/:ruleId", (req, res, next) => {
       const updatedRule=Rule.findByIdAndUpdate(ruleId, {$addToSet : {
       approval:userId
     }}).exec()
-
-
     })
 
     router.route('/withdrawapprovalofrule/:ruleId/:userId').put((req, res) => {
@@ -54,8 +52,12 @@ router.get("/:ruleId", (req, res, next) => {
       const updatedRule=Rule.findByIdAndUpdate(ruleId, {$pull : {
       approval:userId
     }}).exec()
+    })
 
 
+    router.route('/markrulesentdown/:ruleId').put((req, res) => {
+      console.log("sending rule down",req.params.ruleId)
+      Rule.findByIdAndUpdate(req.params.ruleId, {sentdown:true}).exec()
     })
 
 
@@ -67,6 +69,7 @@ router.get("/:ruleId", (req, res, next) => {
       rule :req.body["rule"],
       level:req.body["level"],
       explanation:req.body["explanation"],
+      grouptitle :req.body["grouptitle"],
       group:req.body["group"],
       timecreated:req.body["timecreated"],
       approval:req.body["approval"],

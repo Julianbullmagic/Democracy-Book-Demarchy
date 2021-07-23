@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import {Link} from "react-router-dom";
 import { MapContainer, TileLayer,Circle} from 'react-leaflet'
 import {Image} from 'cloudinary-react'
+import ChatPage from "./../ChatPage/ChatPage"
+
 
 
 import auth from './../auth/auth-helper'
@@ -102,7 +104,7 @@ if(this.state.item.images){
       })}
     </section>
 
-
+<ChatPage/>
 
       </>
     )

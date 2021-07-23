@@ -14,6 +14,7 @@ import SingleMarketPlaceShop from './marketplace/SingleMarketplaceShop'
 import SingleGroupPage from './groups/SingleGroupPage'
 import Menu from './core/Menu'
 import ChatPage from "./ChatPage/ChatPage"
+import ExplanationPage from "./ExplanationPage"
 
 
 const MainRouter = () => {
@@ -30,7 +31,8 @@ const MainRouter = () => {
         <Route exact path="/singlemarketplaceshop/:shopId" component={SingleMarketPlaceShop}/>
         <PrivateRoute path="/user/edit/:userId" component={EditProfile}/>
         <Route exact path="/user/:userId" component={Profile}/>
-        <Route exact path="/groups/:groupId/:grouptype/:higherlower"    component={SingleGroupPage}/>
+        <Route exact path="/groups/:groupId"    component={SingleGroupPage}/>
+        <Route exact path="/explanation"    component={ExplanationPage}/>
       </Switch>
       {localStorage.getItem('jwt') !== null &&   <ChatPage/>}
 

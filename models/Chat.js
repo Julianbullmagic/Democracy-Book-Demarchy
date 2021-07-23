@@ -8,9 +8,16 @@ const chatSchema = mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
-  
+    groupId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Group'
+    },
     type: {
         type: String
+    },
+    recipient:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
     },
 }, { timestamps: true });
 

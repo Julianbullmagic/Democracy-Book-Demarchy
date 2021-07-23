@@ -3,6 +3,7 @@ import {Link} from "react-router-dom";
 import CreateItemForm from './CreateItemForm'
 import auth from './../auth/auth-helper'
 import {Image} from 'cloudinary-react'
+import ChatPage from "./../ChatPage/ChatPage"
 
 class SingleMarketPlaceShop extends Component {
 
@@ -123,6 +124,7 @@ handleChange = (e) =>{
 
               </div></Link>
           </div>
+<ChatPage/>
           </>
         )
       })}

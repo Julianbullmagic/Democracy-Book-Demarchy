@@ -110,8 +110,10 @@ e.preventDefault()
       timecreated:n,
       level:props.level,
       grouptype:props.grouptype,
-      approval:[auth.isAuthenticated().user._id]
+      approval:[auth.isAuthenticated().user._id],
+      group:props.id
     }
+
     console.log("newevent",newEvent)
     const eventToRender={
       _id:eventId,
@@ -123,13 +125,9 @@ e.preventDefault()
       timecreated:n,
       level:props.level,
       grouptype:props.grouptype,
-      approval:[auth.isAuthenticated().user._id]
+      approval:[auth.isAuthenticated().user._id],
+      group:props.group
     }
-
-if(props.higherlower=="higher"){
-  newEvent.group=props.id
-  eventToRender.group=props.group
-}
 
 console.log("new event",newEvent,eventToRender)
     props.updateEvents(eventToRender)
@@ -152,22 +150,11 @@ console.log("new event",newEvent,eventToRender)
                    body: ''
               }
 
-if(props.higherlower=="higher"){
-  await fetch("/groups/addeventtohighergroup/"+props.id+"/"+eventId, optionstwo)
 
-}else{
-  if(props.grouptype=='localgroup'){
-    await fetch("/localgroup/addeventtogroup/"+props.id+"/"+eventId, optionstwo)
-  }
-  if(props.grouptype=='groups'){
     await fetch("/groups/addeventtogroup/"+props.id+"/"+eventId, optionstwo)
   }
-}
 
 
-
-
-}
 
 
   return (

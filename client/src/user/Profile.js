@@ -18,6 +18,7 @@ import {Redirect, Link} from 'react-router-dom'
 import FollowProfileButton from './../user/FollowProfileButton'
 import ProfileTabs from './../user/ProfileTabs'
 import {listByUser} from './../post/api-post.js'
+import ChatPage from "./../ChatPage/ChatPage"
 
 const useStyles = makeStyles(theme => ({
   root: theme.mixins.gutters({
@@ -115,6 +116,7 @@ export default function Profile({ match }) {
       return <Redirect to='/signin'/>
     }
     return (
+      <>
       <Paper className={classes.root} elevation={4}>
         <Typography variant="h6" className={classes.title}>
           Profile
@@ -144,6 +146,9 @@ export default function Profile({ match }) {
           </ListItem>
         </List>
         <ProfileTabs user={values.user} posts={posts} removePostUpdate={removePost}/>
+
       </Paper>
+      <ChatPage/>
+</>
     )
 }

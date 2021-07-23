@@ -18,37 +18,38 @@ e.preventDefault()
     var ruleId=mongoose.Types.ObjectId()
     ruleId=ruleId.toString()
 
-    const newPost={
+    const newRule={
       _id:ruleId,
       rule: ruleValue.current.value,
       explanation:explanationValue.current.value,
       timecreated:n,
       level:props.level,
       grouptype:props.grouptype,
-      approval:[auth.isAuthenticated().user._id]
+      approval:[auth.isAuthenticated().user._id],
+      group:props.id
+
     }
 
-    const postToRender={
+    const ruleToRender={
       _id:ruleId,
       rule: ruleValue.current.value,
       explanation:explanationValue.current.value,
       timecreated:n,
       level:props.level,
       grouptype:props.grouptype,
-      approval:[auth.isAuthenticated().user._id]
+      approval:[auth.isAuthenticated().user._id],
+      group:props.group
     }
 
-if(props.higherlower=="higher"){
-  newPost.group=props.id
-  postToRender.group=props.group
-}
 
-console.log("newPost.group",newPost.group)
-    props.updateRules(postToRender)
-    console.log(newPost)
+
+
+console.log("newPost.group",newRule.group)
+    props.updateRules(ruleToRender)
+    console.log(newRule)
     const options={
         method: "POST",
-        body: JSON.stringify(newPost),
+        body: JSON.stringify(newRule),
         headers: {
             "Content-type": "application/json; charset=UTF-8"}}
 
@@ -64,17 +65,10 @@ console.log("newPost.group",newPost.group)
                    body: ''
               }
 
-if(props.higherlower=="higher"){
-  await fetch("/groups/addruletohighergroup/"+props.id+"/"+ruleId, optionstwo)
+console.log("props.id,ruleId",props.id,ruleId)
 
-}else{
-  if(props.grouptype=='localgroup'){
-    await fetch("/localgroup/addruletogroup/"+props.id+"/"+ruleId, optionstwo)
-  }
-  if(props.grouptype=='groups'){
     await fetch("/groups/addruletogroup/"+props.id+"/"+ruleId, optionstwo)
-  }
-}
+
 
 
 

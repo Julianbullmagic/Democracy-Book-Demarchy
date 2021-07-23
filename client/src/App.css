@@ -5,6 +5,15 @@ button{
     color:white;
     margin:5px;
 }
+
+.reviewscroll{
+  margin: auto;
+ height: 300px;
+ width: 500px;
+ background-color: blanchedalmond;
+ overflow: auto;
+}
+
 body{
   background:white;
   display: flex;
@@ -38,16 +47,20 @@ background:white;
 
 .chatcoloumn1{
   flex-direction:column;
-  width:30%;
+  width:35%;
 
 }
 
 .chatrow1{
 
 }
-
 .chatcoloumn2{
-width:70%;
+  height:90%;
+  width:100%
+}
+
+.chatcoloumn3{
+
 }
 
 .chatrow2{

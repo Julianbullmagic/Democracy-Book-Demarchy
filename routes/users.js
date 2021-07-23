@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { User } = require("../models/user.model");
-
+const { Restriction } = require("../models/restriction.model");
 const { auth } = require("../middleware/auth");
 
 
@@ -31,6 +31,21 @@ router.post("/register", (req, res) => {
         });
     });
 });
+
+router.post("/createuserrrestriction", (req, res) => {
+
+    const restriction = new Restriction(req.body);
+console.log(restriction)
+    restriction.save((err, doc) => {
+        if (err) return res.json({ success: false, err });
+        return res.status(200).json({
+            success: true
+        });
+    });
+});
+
+
+
 
 router.post("/login", (req, res) => {
     User.findOne({ email: req.body.email }, (err, user) => {

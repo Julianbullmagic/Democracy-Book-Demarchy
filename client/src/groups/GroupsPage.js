@@ -15,9 +15,8 @@ import DialogTitle from '@material-ui/core/DialogTitle'
 import {create} from './api-user.js'
 import {Link} from 'react-router-dom'
 import CreateGroupForm from './CreateGroupForm'
-import CreateLocalGroupForm from './CreateLocalGroupForm'
-
 import GroupsList from './GroupsList'
+import ChatPage from "./../ChatPage/ChatPage"
 import auth from './../auth/auth-helper'
 
 
@@ -62,13 +61,12 @@ export default function GroupsPage (){
         <CardContent>
         <button className={classes.submit} onClick={()=>{setViewForm(!viewForm)}}>Create Group?</button>
         {viewForm && <CreateGroupForm />}
-        {viewForm && <CreateLocalGroupForm />}
         <button className={classes.submit} id="viewgrouplist" onClick={()=>{setViewGroupList(!viewGroupList)}}>View Group List?</button>
 
         {viewGroupList&&<GroupsList />}
           </CardContent>
         </Card>
 
-
+<ChatPage/>
     </div>)
 }
